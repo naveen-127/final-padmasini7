@@ -19,7 +19,7 @@ public class PadmasiniAdmin1Application {
             @Override	
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                    .allowedOrigins("http://localhost:5173","https://d2kr3vc90ue6me.cloudfront.net","https://trilokinnovations.com","https://www.trilokinnovations.com")
+                    .allowedOrigins("http://localhost:5173","https://d2kr3vc90ue6me.cloudfront.net","https://trilokinnovations.com","https://www.trilokinnovations.com","https://padmasini7-frontend.netlify.app")
                     .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                     .allowedHeaders("*")    
                     .allowCredentials(true);
