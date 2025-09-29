@@ -8,7 +8,6 @@ public class MotherMCQTest {
     private String testName;
     private int marks;
     private String subjectName;
-    private String unitName;
 
     private List<MCQTest> questionsList = new ArrayList<>();
 
@@ -24,9 +23,6 @@ public class MotherMCQTest {
     public List<MCQTest> getQuestionsList() { return questionsList; }
     public void setQuestionsList(List<MCQTest> questionsList) { this.questionsList = questionsList; }
 
-    public String getUnitName() { return unitName; }
-    public void setUnitName(String unitName) { this.unitName = unitName; }
-
     @Override
     public String toString() {
         return "MotherMCQTest{" +
@@ -36,4 +32,8 @@ public class MotherMCQTest {
                 ", questions=" + (questionsList != null ? questionsList.size() : 0) +
                 '}';
     }
+	public void setUnitName(String unitName) {
+		// TODO Auto-generated method stub
+		
+	}
 }
