@@ -46,10 +46,12 @@ public class AudioController {
     @PostMapping("/upload")
     public ResponseEntity<Map<String, String>> uploadFile(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("folderName") String folderName) {
+            @RequestParam("folderName") String folderName
+    ) {
         try {
             String key = folderName + "/" + System.currentTimeMillis() + "-" + file.getOriginalFilename();
 
+            // AWS SDK RequestBody is used here correctly
             s3Client.putObject(
                     PutObjectRequest.builder()
                             .bucket(bucketName)
@@ -71,7 +73,9 @@ public class AudioController {
 
     // ✅ Delete file by URL
     @DeleteMapping("/delete-file")
-    public ResponseEntity<?> deleteFileByUrl(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String, String>> deleteFileByUrl(
+            @RequestBody Map<String, String> request // ✅ Spring's RequestBody annotation
+    ) {
         String fileUrl = request.get("fileUrl");
         if (fileUrl == null || !fileUrl.contains(".amazonaws.com/")) {
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid input"));
@@ -95,7 +99,7 @@ public class AudioController {
         }
     }
 
-    // ✅ Presigned URL
+    // ✅ Presigned URL generation
     @GetMapping("/presigned-url")
     public ResponseEntity<Map<String, String>> getPresignedUrl(
             @RequestParam String fileName,
