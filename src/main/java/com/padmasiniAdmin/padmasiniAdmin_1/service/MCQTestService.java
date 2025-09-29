@@ -21,12 +21,12 @@ public class MCQTestService {
     @Autowired
     private MongoClient mongoClient;
 
-    // ------------------- MongoTemplate helper -------------------
+    // ✅ Helper method to get template for a DB
     private MongoTemplate getTemplate(String dbName) {
         return new MongoTemplate(mongoClient, dbName);
     }
 
-    // ------------------- ADD OR UPDATE QUESTION -------------------
+    // ------------------- ADD OR UPDATE -------------------
     public String addQuestion(WrapperMCQTest data) {
         UnitRequest root = getById(data.getRootId(), data.getSubjectName(), data.getDbname());
         if (root == null) {
@@ -37,6 +37,7 @@ public class MCQTestService {
         MotherMCQTest existingTest = findTestRecursive(root, data.getParentId(), data.getTestName());
 
         if (existingTest != null) {
+            // ✅ If quesId exists → Update existing question
             if (data.getQuesId() != null && !data.getQuesId().isEmpty()) {
                 for (MCQTest q : existingTest.getQuestionsList()) {
                     if (q.getId().equals(data.getQuesId())) {
@@ -45,14 +46,16 @@ public class MCQTestService {
                         break;
                     }
                 }
-            } else if (data.getQuestionsList() != null && !data.getQuestionsList().isEmpty()) {
-                data.getQuestionsList().forEach(this::sanitizeQuestion);
+            }
+            // ✅ Otherwise add new question(s)
+            else if (data.getQuestionsList() != null && !data.getQuestionsList().isEmpty()) {
+                data.getQuestionsList().forEach(this::sanitizeImages);
                 existingTest.getQuestionsList().addAll(data.getQuestionsList());
                 System.out.println("✅ Added " + data.getQuestionsList().size() +
                         " new question(s) to test: " + existingTest.getTestName());
             }
         } else {
-            // Create new test
+            // 🆕 Create new test if not found
             MotherMCQTest mcq = new MotherMCQTest();
             mcq.setTestName(data.getTestName());
             mcq.setMarks(data.getMarks());
@@ -60,7 +63,7 @@ public class MCQTestService {
             mcq.setSubjectName(data.getSubjectName());
 
             if (data.getQuestionsList() != null) {
-                data.getQuestionsList().forEach(this::sanitizeQuestion);
+                data.getQuestionsList().forEach(this::sanitizeImages);
             }
             mcq.setQuestionsList(data.getQuestionsList() != null ? data.getQuestionsList() : new ArrayList<>());
 
@@ -72,7 +75,7 @@ public class MCQTestService {
         return root.getUnitName();
     }
 
-    // ------------------- UPDATE QUESTION -------------------
+    // ------------------- UPDATE TEST / QUESTION -------------------
     public String updateQuestion(WrapperMCQTest data, String oldName) {
         UnitRequest root = getById(data.getRootId(), data.getSubjectName(), data.getDbname());
         if (root == null) {
@@ -112,7 +115,7 @@ public class MCQTestService {
         }
     }
 
-    // ------------------- DELETE QUESTION -------------------
+    // ------------------- DELETE -------------------
     public String deleteQuestion(WrapperMCQTest data) {
         System.out.println("🗑 Inside deleteQuestion service");
         UnitRequest root = getById(data.getRootId(), data.getSubjectName(), data.getDbname());
@@ -133,7 +136,6 @@ public class MCQTestService {
     private void updateQuestionFields(MCQTest q, WrapperMCQTest data) {
         q.setQuestion(data.getQuestion());
         q.setQuestionImages(sanitizeList(data.getQuestionImages(), "NO_QUESTION_IMAGE"));
-
         q.setOption1(data.getOption1());
         q.setOption1Image(data.getOption1Image());
         q.setOption2(data.getOption2());
@@ -142,21 +144,13 @@ public class MCQTestService {
         q.setOption3Image(data.getOption3Image());
         q.setOption4(data.getOption4());
         q.setOption4Image(data.getOption4Image());
-
         q.setSolution(data.getSolution());
         q.setSolutionImages(sanitizeList(data.getSolutionImages(), "NO_SOLUTION_IMAGE"));
-
-        q.setCorrectIndex(data.getCorrectIndex());
-
-        q.setRows(data.getRows());
-        q.setCols(data.getCols());
-        q.setTableData(data.getTableData() != null ? data.getTableData() : new ArrayList<>());
     }
 
-    private void sanitizeQuestion(MCQTest q) {
+    private void sanitizeImages(MCQTest q) {
         q.setQuestionImages(sanitizeList(q.getQuestionImages(), "NO_QUESTION_IMAGE"));
         q.setSolutionImages(sanitizeList(q.getSolutionImages(), "NO_SOLUTION_IMAGE"));
-        if (q.getTableData() == null) q.setTableData(new ArrayList<>());
     }
 
     private List<String> sanitizeList(List<String> input, String defaultValue) {
@@ -168,6 +162,7 @@ public class MCQTestService {
         return input;
     }
 
+    // ✅ Recursive search for test inside root and child units
     private MotherMCQTest findTestRecursive(UnitRequest root, String parentId, String testName) {
         if (root.getId().equals(parentId)) {
             return root.getTest().stream()
