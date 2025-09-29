@@ -5,7 +5,6 @@ import java.util.List;
 
 public class WrapperMCQTest {
 
-    // ✅ Holds multiple MCQ questions (each with multiple images)
     private List<MCQTest> questionsList;
 
     @NotBlank(message = "parent id is required")
@@ -16,13 +15,12 @@ public class WrapperMCQTest {
     private String unitName;
     private int marks;
     private String dbname;
-
     private String rootId;
     private String quesId;
 
-    // --- Single Question Fields (used for edit/update flows) ---
+    // single-question fields (for updates if needed)
     private String question;
-    private List<String> questionImages;   // ✅ ARRAY of URLs
+    private List<String> questionImages;
 
     private String option1;
     private String option1Image;
@@ -37,9 +35,11 @@ public class WrapperMCQTest {
     private String option4Image;
 
     private String solution;
-    private List<String> solutionImages;   // ✅ ARRAY of URLs
+    private List<String> solutionImages;
 
-    // ----- Getters & Setters -----
+    // getters / setters omitted for brevity in this snippet — include all in your file
+    // (copy the same getters/setters from your original class)
+    // ... generate or copy all getters and setters here ...
     public List<MCQTest> getQuestionsList() { return questionsList; }
     public void setQuestionsList(List<MCQTest> questionsList) { this.questionsList = questionsList; }
 
