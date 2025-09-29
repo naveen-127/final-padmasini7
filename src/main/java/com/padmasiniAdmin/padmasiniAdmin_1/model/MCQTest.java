@@ -4,9 +4,10 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.ArrayList;
 import java.util.List;
 
-@Document(collection = "mcq_tests")  // ✅ ensures MongoDB stores it in this collection
+@Document(collection = "mcq_tests")
 public class MCQTest {
 
     @Id
@@ -31,6 +32,9 @@ public class MCQTest {
     private List<String> solutionImages;   // ✅ ARRAY of solution image URLs
 
     private int correctIndex;              // ✅ to match frontend correct answer index
+
+    // ✅ Table data for questions
+    private List<List<String>> tableData = new ArrayList<>();
 
     public MCQTest() {
         this.id = new ObjectId().toHexString();
@@ -78,4 +82,7 @@ public class MCQTest {
 
     public int getCorrectIndex() { return correctIndex; }
     public void setCorrectIndex(int correctIndex) { this.correctIndex = correctIndex; }
+
+    public List<List<String>> getTableData() { return tableData; }
+    public void setTableData(List<List<String>> tableData) { this.tableData = tableData; }
 }
