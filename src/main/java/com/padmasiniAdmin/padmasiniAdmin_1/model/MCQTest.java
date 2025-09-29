@@ -30,7 +30,7 @@ public class MCQTest {
 
     private int correctIndex;
 
-    // ✅ Table support
+    // Table support
     private int rows;
     private int cols;
     private List<List<String>> tableData = new ArrayList<>();
