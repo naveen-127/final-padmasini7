@@ -133,25 +133,25 @@ public class MCQTestService {
     }
 
     // ------------------- HELPERS -------------------
-    private void updateQuestionFields(MCQTest q, WrapperMCQTest data) {
-    q.setQuestion(data.getQuestion());
-    q.setQuestionImages(sanitizeList(data.getQuestionImages(), "NO_QUESTION_IMAGE"));
-    q.setOption1(data.getOption1());
-    q.setOption1Image(data.getOption1Image());
-    q.setOption2(data.getOption2());
-    q.setOption2Image(data.getOption2Image());
-    q.setOption3(data.getOption3());
-    q.setOption3Image(data.getOption3Image());
-    q.setOption4(data.getOption4());
-    q.setOption4Image(data.getOption4Image());
-    // ✅ Preserve solution
-    q.setSolution(data.getSolution());
-    q.setSolutionImages(sanitizeList(data.getSolutionImages(), "NO_SOLUTION_IMAGE"));
-    // ✅ Add table data
-    if (data.getTableData() != null) {
-        q.setTableData(data.getTableData());
+  private void updateQuestionFields(MCQTest q, WrapperMCQTest data) {
+        q.setQuestion(data.getQuestion());
+        q.setQuestionImages(sanitizeList(data.getQuestionImages(), "NO_QUESTION_IMAGE"));
+        q.setOption1(data.getOption1());
+        q.setOption1Image(data.getOption1Image());
+        q.setOption2(data.getOption2());
+        q.setOption2Image(data.getOption2Image());
+        q.setOption3(data.getOption3());
+        q.setOption3Image(data.getOption3Image());
+        q.setOption4(data.getOption4());
+        q.setOption4Image(data.getOption4Image());
+        q.setSolution(data.getSolution());
+        q.setSolutionImages(sanitizeList(data.getSolutionImages(), "NO_SOLUTION_IMAGE"));
     }
-}
+
+    private void sanitizeImages(MCQTest q) {
+        q.setQuestionImages(sanitizeList(q.getQuestionImages(), "NO_QUESTION_IMAGE"));
+        q.setSolutionImages(sanitizeList(q.getSolutionImages(), "NO_SOLUTION_IMAGE"));
+    }
 
     private List<String> sanitizeList(List<String> input, String defaultValue) {
         if (input == null || input.isEmpty()) {
