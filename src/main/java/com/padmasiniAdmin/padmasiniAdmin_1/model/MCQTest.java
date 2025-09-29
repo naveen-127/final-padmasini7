@@ -4,36 +4,33 @@ import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.ArrayList;
 import java.util.List;
 
-@Document(collection = "mcq_tests")
+@Document(collection = "mcq_tests")  // ✅ ensures MongoDB stores it in this collection
 public class MCQTest {
 
     @Id
     private String id;
 
     private String question;
-    private List<String> questionImages = new ArrayList<>();
+    private List<String> questionImages;   // ✅ ARRAY of question image URLs
 
     private String option1;
     private String option1Image;
+
     private String option2;
     private String option2Image;
+
     private String option3;
     private String option3Image;
+
     private String option4;
     private String option4Image;
 
     private String solution;
-    private List<String> solutionImages = new ArrayList<>();
+    private List<String> solutionImages;   // ✅ ARRAY of solution image URLs
 
-    private int correctIndex;
-
-    // Table support
-    private int rows;
-    private int cols;
-    private List<List<String>> tableData = new ArrayList<>();
+    private int correctIndex;              // ✅ to match frontend correct answer index
 
     public MCQTest() {
         this.id = new ObjectId().toHexString();
@@ -81,13 +78,4 @@ public class MCQTest {
 
     public int getCorrectIndex() { return correctIndex; }
     public void setCorrectIndex(int correctIndex) { this.correctIndex = correctIndex; }
-
-    public int getRows() { return rows; }
-    public void setRows(int rows) { this.rows = rows; }
-
-    public int getCols() { return cols; }
-    public void setCols(int cols) { this.cols = cols; }
-
-    public List<List<String>> getTableData() { return tableData; }
-    public void setTableData(List<List<String>> tableData) { this.tableData = tableData; }
 }
