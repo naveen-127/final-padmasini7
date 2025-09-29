@@ -14,7 +14,7 @@ public class MCQTest {
     private String id;
 
     private String question;
-    private List<String> questionImages;   // ✅ ARRAY of question image URLs
+    private List<String> questionImages = new ArrayList<>();
 
     private String option1;
     private String option1Image;
@@ -29,18 +29,17 @@ public class MCQTest {
     private String option4Image;
 
     private String solution;
-    private List<String> solutionImages;   // ✅ ARRAY of solution image URLs
+    private List<String> solutionImages = new ArrayList<>();
 
-    private int correctIndex;              // ✅ to match frontend correct answer index
-
-    // ✅ Table data for questions
+    private int correctIndex;
     private List<List<String>> tableData = new ArrayList<>();
 
     public MCQTest() {
+        // ensure unique id when created server-side
         this.id = new ObjectId().toHexString();
     }
 
-    // ----- Getters & Setters -----
+    // getters & setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
