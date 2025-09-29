@@ -1,119 +1,105 @@
 package com.padmasiniAdmin.padmasiniAdmin_1.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 
 public class WrapperMCQTest {
 
-    @NotBlank(message = "Parent ID is required")
-    private String parentId;
-
-    @NotBlank(message = "Standard is required")
-    private String standard;
-
-    private List<String> keepAudioFileIds;
-    private String dbname;
-
-    private String unitName;
-    private String explanation;
-
-    @NotBlank(message = "Root Unit ID is required")
-    private String rootUnitId;
-
-    private String subjectName;
-
-    // ✅ Audio files
-    private List<String> audioFileId;
-
-    // ✅ Images
-    private List<String> imageUrls;
-
-    // ✅ AI Video
-    private String aiVideoUrl;
-
-    private List<MCQTest> test;
-
-    // ✅ New fields to fix MCQTestService compilation
-    private int correctIndex;
-    private int rows;
-    private int cols;
-    private List<List<String>> tableData;
-
-    private String testName;
-    private int marks;
-    private String quesId;
+    // ✅ Holds multiple MCQ questions (each with multiple images)
     private List<MCQTest> questionsList;
 
+    @NotBlank(message = "parent id is required")
+    private String parentId;
+
+    private String subjectName;
+    private String testName;
+    private String unitName;
+    private int marks;
+    private String dbname;
+
+    private String rootId;
+    private String quesId;
+
+    // --- Single Question Fields (used for edit/update flows) ---
+    private String question;
+    private List<String> questionImages;   // ✅ ARRAY of URLs
+
+    private String option1;
+    private String option1Image;
+
+    private String option2;
+    private String option2Image;
+
+    private String option3;
+    private String option3Image;
+
+    private String option4;
+    private String option4Image;
+
+    private String solution;
+    private List<String> solutionImages;   // ✅ ARRAY of URLs
+
     // ----- Getters & Setters -----
+    public List<MCQTest> getQuestionsList() { return questionsList; }
+    public void setQuestionsList(List<MCQTest> questionsList) { this.questionsList = questionsList; }
+
     public String getParentId() { return parentId; }
     public void setParentId(String parentId) { this.parentId = parentId; }
-
-    public String getStandard() { return standard; }
-    public void setStandard(String standard) { this.standard = standard; }
-
-    public List<String> getKeepAudioFileIds() { return keepAudioFileIds; }
-    public void setKeepAudioFileIds(List<String> keepAudioFileIds) { this.keepAudioFileIds = keepAudioFileIds; }
-
-    public String getDbname() { return dbname; }
-    public void setDbname(String dbname) { this.dbname = dbname; }
-
-    public String getUnitName() { return unitName; }
-    public void setUnitName(String unitName) { this.unitName = unitName; }
-
-    public String getExplanation() { return explanation; }
-    public void setExplanation(String explanation) { this.explanation = explanation; }
-
-    public String getRootUnitId() { return rootUnitId; }
-    public void setRootUnitId(String rootUnitId) { this.rootUnitId = rootUnitId; }
 
     public String getSubjectName() { return subjectName; }
     public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
 
-    public List<String> getAudioFileId() { return audioFileId; }
-    public void setAudioFileId(List<String> audioFileId) { this.audioFileId = audioFileId; }
-
-    public List<String> getImageUrls() { return imageUrls; }
-    public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
-
-    public String getAiVideoUrl() { return aiVideoUrl; }
-    public void setAiVideoUrl(String aiVideoUrl) { this.aiVideoUrl = aiVideoUrl; }
-
-    public List<MCQTest> getTest() { return test; }
-    public void setTest(List<MCQTest> test) { this.test = test; }
-
-    public int getCorrectIndex() { return correctIndex; }
-    public void setCorrectIndex(int correctIndex) { this.correctIndex = correctIndex; }
-
-    public int getRows() { return rows; }
-    public void setRows(int rows) { this.rows = rows; }
-
-    public int getCols() { return cols; }
-    public void setCols(int cols) { this.cols = cols; }
-
-    public List<List<String>> getTableData() { return tableData; }
-    public void setTableData(List<List<String>> tableData) { this.tableData = tableData; }
-
     public String getTestName() { return testName; }
     public void setTestName(String testName) { this.testName = testName; }
+
+    public String getUnitName() { return unitName; }
+    public void setUnitName(String unitName) { this.unitName = unitName; }
 
     public int getMarks() { return marks; }
     public void setMarks(int marks) { this.marks = marks; }
 
+    public String getDbname() { return dbname; }
+    public void setDbname(String dbname) { this.dbname = dbname; }
+
+    public String getRootId() { return rootId; }
+    public void setRootId(String rootId) { this.rootId = rootId; }
+
     public String getQuesId() { return quesId; }
     public void setQuesId(String quesId) { this.quesId = quesId; }
 
-    public List<MCQTest> getQuestionsList() { return questionsList; }
-    public void setQuestionsList(List<MCQTest> questionsList) { this.questionsList = questionsList; }
+    public String getQuestion() { return question; }
+    public void setQuestion(String question) { this.question = question; }
 
-    @Override
-    public String toString() {
-        return "WrapperMCQTest [parentId=" + parentId + ", standard=" + standard + ", dbname=" + dbname +
-                ", unitName=" + unitName + ", explanation=" + explanation + ", rootUnitId=" + rootUnitId +
-                ", subjectName=" + subjectName + ", audioFileId=" + audioFileId + ", imageUrls=" + imageUrls +
-                ", aiVideoUrl=" + aiVideoUrl + ", test=" + test + ", correctIndex=" + correctIndex +
-                ", rows=" + rows + ", cols=" + cols + ", tableData=" + tableData + ", testName=" + testName +
-                ", marks=" + marks + ", quesId=" + quesId + ", questionsList=" + questionsList + "]";
-    }
+    public List<String> getQuestionImages() { return questionImages; }
+    public void setQuestionImages(List<String> questionImages) { this.questionImages = questionImages; }
+
+    public String getOption1() { return option1; }
+    public void setOption1(String option1) { this.option1 = option1; }
+
+    public String getOption1Image() { return option1Image; }
+    public void setOption1Image(String option1Image) { this.option1Image = option1Image; }
+
+    public String getOption2() { return option2; }
+    public void setOption2(String option2) { this.option2 = option2; }
+
+    public String getOption2Image() { return option2Image; }
+    public void setOption2Image(String option2Image) { this.option2Image = option2Image; }
+
+    public String getOption3() { return option3; }
+    public void setOption3(String option3) { this.option3 = option3; }
+
+    public String getOption3Image() { return option3Image; }
+    public void setOption3Image(String option3Image) { this.option3Image = option3Image; }
+
+    public String getOption4() { return option4; }
+    public void setOption4(String option4) { this.option4 = option4; }
+
+    public String getOption4Image() { return option4Image; }
+    public void setOption4Image(String option4Image) { this.option4Image = option4Image; }
+
+    public String getSolution() { return solution; }
+    public void setSolution(String solution) { this.solution = solution; }
+
+    public List<String> getSolutionImages() { return solutionImages; }
+    public void setSolutionImages(List<String> solutionImages) { this.solutionImages = solutionImages; }
 }
