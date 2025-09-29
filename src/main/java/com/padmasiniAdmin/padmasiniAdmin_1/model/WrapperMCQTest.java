@@ -1,68 +1,55 @@
 package com.padmasiniAdmin.padmasiniAdmin_1.model;
 
-import jakarta.validation.constraints.NotBlank;
+import java.util.ArrayList;
 import java.util.List;
 
 public class WrapperMCQTest {
 
-    // ✅ Holds multiple MCQ questions (each with multiple images)
-    private List<MCQTest> questionsList;
-
-    @NotBlank(message = "parent id is required")
-    private String parentId;
-
-    private String subjectName;
-    private String testName;
-    private String unitName;
-    private int marks;
-    private String dbname;
-
     private String rootId;
+    private String parentId;
+    private String testName;
+    private int marks;
+    private String unitName;
+    private String subjectName;
     private String quesId;
 
-    // --- Single Question Fields (used for edit/update flows) ---
     private String question;
-    private List<String> questionImages;   // ✅ ARRAY of URLs
-
+    private List<String> questionImages;
     private String option1;
     private String option1Image;
-
     private String option2;
     private String option2Image;
-
     private String option3;
     private String option3Image;
-
     private String option4;
     private String option4Image;
-
     private String solution;
-    private List<String> solutionImages;   // ✅ ARRAY of URLs
+    private List<String> solutionImages;
+    private int correctIndex;
+    private int rows;
+    private int cols;
+    private List<List<String>> tableData;
+
+    private List<MCQTest> questionsList;
 
     // ----- Getters & Setters -----
-    public List<MCQTest> getQuestionsList() { return questionsList; }
-    public void setQuestionsList(List<MCQTest> questionsList) { this.questionsList = questionsList; }
+    public String getRootId() { return rootId; }
+    public void setRootId(String rootId) { this.rootId = rootId; }
 
     public String getParentId() { return parentId; }
     public void setParentId(String parentId) { this.parentId = parentId; }
 
-    public String getSubjectName() { return subjectName; }
-    public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
-
     public String getTestName() { return testName; }
     public void setTestName(String testName) { this.testName = testName; }
-
-    public String getUnitName() { return unitName; }
-    public void setUnitName(String unitName) { this.unitName = unitName; }
 
     public int getMarks() { return marks; }
     public void setMarks(int marks) { this.marks = marks; }
 
-    public String getDbname() { return dbname; }
-    public void setDbname(String dbname) { this.dbname = dbname; }
+    public String getUnitName() { return unitName; }
+    public void setUnitName(String unitName) { this.unitName = unitName; }
 
-    public String getRootId() { return rootId; }
-    public void setRootId(String rootId) { this.rootId = rootId; }
+    public String getSubjectName() { return subjectName; }
+    public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
 
     public String getQuesId() { return quesId; }
     public void setQuesId(String quesId) { this.quesId = quesId; }
@@ -102,4 +89,19 @@ public class WrapperMCQTest {
 
     public List<String> getSolutionImages() { return solutionImages; }
     public void setSolutionImages(List<String> solutionImages) { this.solutionImages = solutionImages; }
+
+    public int getCorrectIndex() { return correctIndex; }
+    public void setCorrectIndex(int correctIndex) { this.correctIndex = correctIndex; }
+
+    public int getRows() { return rows; }
+    public void setRows(int rows) { this.rows = rows; }
+
+    public int getCols() { return cols; }
+    public void setCols(int cols) { this.cols = cols; }
+
+    public List<List<String>> getTableData() { return tableData; }
+    public void setTableData(List<List<String>> tableData) { this.tableData = tableData; }
+
+    public List<MCQTest> getQuestionsList() { return questionsList; }
+    public void setQuestionsList(List<MCQTest> questionsList) { this.questionsList = questionsList; }
 }
