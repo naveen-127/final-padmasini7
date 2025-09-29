@@ -14,6 +14,7 @@ import com.padmasiniAdmin.padmasiniAdmin_1.model.WrapperMCQTest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class MCQTestService {
@@ -21,14 +22,14 @@ public class MCQTestService {
     @Autowired
     private MongoClient mongoClient;
 
-    // ✅ Helper method to get template for a DB
+    // ------------------- Helper: MongoTemplate -------------------
     private MongoTemplate getTemplate(String dbName) {
         return new MongoTemplate(mongoClient, dbName);
     }
 
-    // ------------------- ADD OR UPDATE -------------------
+    // ------------------- Add or Update Questions -------------------
     public String addQuestion(WrapperMCQTest data) {
-        UnitRequest root = getById(data.getRootId(), data.getSubjectName(), data.getDbname());
+        UnitRequest root = getById(data.getRootId(), "units", data.getDbname());
         if (root == null) {
             System.out.println("❌ Root unit not found for RootId: " + data.getRootId());
             return null;
@@ -37,7 +38,7 @@ public class MCQTestService {
         MotherMCQTest existingTest = findTestRecursive(root, data.getParentId(), data.getTestName());
 
         if (existingTest != null) {
-            // ✅ If quesId exists → Update existing question
+            // Update existing question
             if (data.getQuesId() != null && !data.getQuesId().isEmpty()) {
                 for (MCQTest q : existingTest.getQuestionsList()) {
                     if (q.getId().equals(data.getQuesId())) {
@@ -47,26 +48,23 @@ public class MCQTestService {
                     }
                 }
             }
-            // ✅ Otherwise add new question(s)
-            else if (data.getQuestionsList() != null && !data.getQuestionsList().isEmpty()) {
+            // Add new questions
+            if (data.getQuestionsList() != null && !data.getQuestionsList().isEmpty()) {
                 data.getQuestionsList().forEach(this::sanitizeImages);
                 existingTest.getQuestionsList().addAll(data.getQuestionsList());
                 System.out.println("✅ Added " + data.getQuestionsList().size() +
                         " new question(s) to test: " + existingTest.getTestName());
             }
         } else {
-            // 🆕 Create new test if not found
+            // Create new test
             MotherMCQTest mcq = new MotherMCQTest();
             mcq.setTestName(data.getTestName());
             mcq.setMarks(data.getMarks());
-            mcq.setUnitName(data.getUnitName());
             mcq.setSubjectName(data.getSubjectName());
-
-            if (data.getQuestionsList() != null) {
-                data.getQuestionsList().forEach(this::sanitizeImages);
-            }
             mcq.setQuestionsList(data.getQuestionsList() != null ? data.getQuestionsList() : new ArrayList<>());
+            mcq.getQuestionsList().forEach(this::sanitizeImages);
 
+            // Attach test to parent
             attachTestToParent(root, data.getParentId(), mcq);
             System.out.println("✅ Created new test: " + mcq.getTestName());
         }
@@ -75,20 +73,21 @@ public class MCQTestService {
         return root.getUnitName();
     }
 
-    // ------------------- UPDATE TEST / QUESTION -------------------
-    public String updateQuestion(WrapperMCQTest data, String oldName) {
-        UnitRequest root = getById(data.getRootId(), data.getSubjectName(), data.getDbname());
+    // ------------------- Update Single Question -------------------
+    public String updateQuestion(WrapperMCQTest data, String oldTestName) {
+        UnitRequest root = getById(data.getRootId(), "units", data.getDbname());
         if (root == null) {
             System.out.println("❌ Root unit not found for RootId: " + data.getRootId());
             return null;
         }
 
-        MotherMCQTest test = findTestRecursive(root, data.getParentId(), oldName);
+        MotherMCQTest test = findTestRecursive(root, data.getParentId(), oldTestName);
         if (test == null) {
-            System.out.println("⚠️ Test not found: " + oldName);
+            System.out.println("⚠️ Test not found: " + oldTestName);
             return null;
         }
 
+        // Update test info
         if (data.getTestName() != null && !data.getTestName().trim().isEmpty()) {
             test.setTestName(data.getTestName());
         }
@@ -96,6 +95,7 @@ public class MCQTestService {
             test.setMarks(data.getMarks());
         }
 
+        // Update question
         boolean updated = false;
         for (MCQTest ques : test.getQuestionsList()) {
             if (ques.getId().equals(data.getQuesId())) {
@@ -115,10 +115,9 @@ public class MCQTestService {
         }
     }
 
-    // ------------------- DELETE -------------------
+    // ------------------- Delete Question or Test -------------------
     public String deleteQuestion(WrapperMCQTest data) {
-        System.out.println("🗑 Inside deleteQuestion service");
-        UnitRequest root = getById(data.getRootId(), data.getSubjectName(), data.getDbname());
+        UnitRequest root = getById(data.getRootId(), "units", data.getDbname());
         if (root == null) return null;
 
         boolean deleted = deleteTestRecursive(root, data.getParentId(), data);
@@ -132,7 +131,7 @@ public class MCQTestService {
         }
     }
 
-    // ------------------- HELPERS -------------------
+    // ------------------- Helpers -------------------
     private void updateQuestionFields(MCQTest q, WrapperMCQTest data) {
         q.setQuestion(data.getQuestion());
         q.setQuestionImages(sanitizeList(data.getQuestionImages(), "NO_QUESTION_IMAGE"));
@@ -162,7 +161,7 @@ public class MCQTestService {
         return input;
     }
 
-    // ✅ Recursive search for test inside root and child units
+    // ------------------- Recursive Test Search -------------------
     private MotherMCQTest findTestRecursive(UnitRequest root, String parentId, String testName) {
         if (root.getId().equals(parentId)) {
             return root.getTest().stream()
@@ -171,14 +170,8 @@ public class MCQTestService {
                     .orElse(null);
         }
         for (Unit u : root.getUnits()) {
-            if (u.getId().equals(parentId)) {
-                return u.getTest().stream()
-                        .filter(t -> t.getTestName().equals(testName))
-                        .findFirst()
-                        .orElse(null);
-            }
-            MotherMCQTest childResult = findTestRecursiveInUnit(u, parentId, testName);
-            if (childResult != null) return childResult;
+            MotherMCQTest res = findTestRecursiveInUnit(u, parentId, testName);
+            if (res != null) return res;
         }
         return null;
     }
@@ -191,22 +184,19 @@ public class MCQTestService {
                     .orElse(null);
         }
         for (Unit child : unit.getUnits()) {
-            MotherMCQTest result = findTestRecursiveInUnit(child, parentId, testName);
-            if (result != null) return result;
+            MotherMCQTest res = findTestRecursiveInUnit(child, parentId, testName);
+            if (res != null) return res;
         }
         return null;
     }
 
+    // ------------------- Attach Test to Parent -------------------
     private void attachTestToParent(UnitRequest root, String parentId, MotherMCQTest test) {
         if (root.getId().equals(parentId)) {
             root.getTest().add(test);
             return;
         }
         for (Unit u : root.getUnits()) {
-            if (u.getId().equals(parentId)) {
-                u.getTest().add(test);
-                return;
-            }
             attachTestToParentRecursive(u, parentId, test);
         }
     }
@@ -221,14 +211,14 @@ public class MCQTestService {
         }
     }
 
+    // ------------------- Delete Recursive -------------------
     private boolean deleteTestRecursive(UnitRequest root, String parentId, WrapperMCQTest data) {
         if (root.getId().equals(parentId)) {
             if (data.getQuesId() != null && !data.getQuesId().isEmpty()) {
-                return root.getTest().stream()
+                Optional<MotherMCQTest> test = root.getTest().stream()
                         .filter(t -> t.getTestName().equals(data.getTestName()))
-                        .findFirst()
-                        .map(t -> t.getQuestionsList().removeIf(q -> q.getId().equals(data.getQuesId())))
-                        .orElse(false);
+                        .findFirst();
+                return test.map(t -> t.getQuestionsList().removeIf(q -> q.getId().equals(data.getQuesId()))).orElse(false);
             } else {
                 return root.getTest().removeIf(t -> t.getTestName().equals(data.getTestName()));
             }
@@ -242,11 +232,10 @@ public class MCQTestService {
     private boolean deleteTestRecursiveInUnit(Unit unit, String parentId, WrapperMCQTest data) {
         if (unit.getId().equals(parentId)) {
             if (data.getQuesId() != null && !data.getQuesId().isEmpty()) {
-                return unit.getTest().stream()
+                Optional<MotherMCQTest> test = unit.getTest().stream()
                         .filter(t -> t.getTestName().equals(data.getTestName()))
-                        .findFirst()
-                        .map(t -> t.getQuestionsList().removeIf(q -> q.getId().equals(data.getQuesId())))
-                        .orElse(false);
+                        .findFirst();
+                return test.map(t -> t.getQuestionsList().removeIf(q -> q.getId().equals(data.getQuesId()))).orElse(false);
             } else {
                 return unit.getTest().removeIf(t -> t.getTestName().equals(data.getTestName()));
             }
@@ -257,12 +246,14 @@ public class MCQTestService {
         return false;
     }
 
+    // ------------------- Save Root -------------------
     private void saveRoot(UnitRequest root, WrapperMCQTest data) {
-        System.out.println("📌 Saving DB: " + data.getDbname() + " | Collection: " + data.getSubjectName());
-        getTemplate(data.getDbname()).save(root, data.getSubjectName());
-        System.out.println("✅ Saved successfully!");
+        MongoTemplate template = getTemplate(data.getDbname());
+        template.save(root, "units"); // Fixed collection name
+        System.out.println("✅ Saved successfully to DB: " + data.getDbname());
     }
 
+    // ------------------- Get UnitRequest by ID -------------------
     public UnitRequest getById(String id, String collectionName, String dbname) {
         MongoTemplate mongoTemplate = getTemplate(dbname);
         try {
