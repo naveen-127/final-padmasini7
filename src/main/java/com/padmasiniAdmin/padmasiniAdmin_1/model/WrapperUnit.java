@@ -12,9 +12,7 @@ public class WrapperUnit {
     @NotBlank(message = "Standard is required")
     private String standard;
 
-    private List<String> keepAudioFileIds;
     private String dbname;
-
     private String unitName;
     private String explanation;
 
@@ -23,23 +21,31 @@ public class WrapperUnit {
 
     private String subjectName;
 
-    // ✅ Audio files
+    // ✅ Keep Audio file IDs (existing files not to be deleted)
+    private List<String> keepAudioFileIds;
+
+    // ✅ Audio files (newly uploaded IDs)
     private List<String> audioFileId;
 
-    // ✅ Images
+    // ✅ Images (AI-generated or uploaded)
     private List<String> imageUrls;
 
-    // ✅ AI Video
+    // ✅ AI Video (single generated video)
     private String aiVideoUrl;
 
-    private List<MCQTest> test;
-
     // ----- Getters & Setters -----
-    public List<String> getKeepAudioFileIds() {
-        return keepAudioFileIds;
+    public String getParentId() {
+        return parentId;
     }
-    public void setKeepAudioFileIds(List<String> keepAudioFileIds) {
-        this.keepAudioFileIds = keepAudioFileIds;
+    public void setParentId(String parentId) {
+        this.parentId = parentId;
+    }
+
+    public String getStandard() {
+        return standard;
+    }
+    public void setStandard(String standard) {
+        this.standard = standard;
     }
 
     public String getDbname() {
@@ -49,11 +55,18 @@ public class WrapperUnit {
         this.dbname = dbname;
     }
 
-    public List<MCQTest> getTest() {
-        return test;
+    public String getUnitName() {
+        return unitName;
     }
-    public void setTest(List<MCQTest> test) {
-        this.test = test;
+    public void setUnitName(String unitName) {
+        this.unitName = unitName;
+    }
+
+    public String getExplanation() {
+        return explanation;
+    }
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
     }
 
     public String getRootUnitId() {
@@ -70,32 +83,11 @@ public class WrapperUnit {
         this.subjectName = subjectName;
     }
 
-    public String getParentId() {
-        return parentId;
+    public List<String> getKeepAudioFileIds() {
+        return keepAudioFileIds;
     }
-    public void setParentId(String parentId) {
-        this.parentId = parentId;
-    }
-
-    public String getExplanation() {
-        return explanation;
-    }
-    public void setExplanation(String explanation) {
-        this.explanation = explanation;
-    }
-
-    public String getStandard() {
-        return standard;
-    }
-    public void setStandard(String standard) {
-        this.standard = standard;
-    }
-
-    public String getUnitName() {
-        return unitName;
-    }
-    public void setUnitName(String unitName) {
-        this.unitName = unitName;
+    public void setKeepAudioFileIds(List<String> keepAudioFileIds) {
+        this.keepAudioFileIds = keepAudioFileIds;
     }
 
     public List<String> getAudioFileId() {
@@ -121,9 +113,16 @@ public class WrapperUnit {
 
     @Override
     public String toString() {
-        return "WrapperUnit [parentId=" + parentId + ", explanation=" + explanation + ", dbname=" + dbname
-                + ", standard=" + standard + ", unitName=" + unitName + ", rootUnitId=" + rootUnitId + ", subjectName="
-                + subjectName + ", audioFileId=" + audioFileId + ", imageUrls=" + imageUrls
-                + ", aiVideoUrl=" + aiVideoUrl + ", test=" + test + "]";
+        return "WrapperUnit [parentId=" + parentId 
+                + ", standard=" + standard 
+                + ", dbname=" + dbname 
+                + ", unitName=" + unitName 
+                + ", explanation=" + explanation 
+                + ", rootUnitId=" + rootUnitId 
+                + ", subjectName=" + subjectName 
+                + ", keepAudioFileIds=" + keepAudioFileIds 
+                + ", audioFileId=" + audioFileId 
+                + ", imageUrls=" + imageUrls 
+                + ", aiVideoUrl=" + aiVideoUrl + "]";
     }
 }
