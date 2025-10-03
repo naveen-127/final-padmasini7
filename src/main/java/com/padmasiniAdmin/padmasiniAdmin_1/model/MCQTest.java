@@ -73,8 +73,8 @@ public class MCQTest {
     public String getOption4Image() { return option4Image; }
     public void setOption4Image(String option4Image) { this.option4Image = option4Image; }
 
-    public String getSolution() { return explanation; }
-    public void setSolution(String explanation) { this.explanation = solution; }
+    public String getExplanation() { return explanation; }
+    public void setExplanation(String explanation) { this.explanation = explanation; }
 
     public List<String> getSolutionImages() { return solutionImages; }
     public void setSolutionImages(List<String> solutionImages) { this.solutionImages = solutionImages; }
