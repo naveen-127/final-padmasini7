@@ -34,7 +34,7 @@ public class WrapperMCQTest {
     private String option4;
     private String option4Image;
 
-    private String solution;
+    private String explanation;
     private List<String> solutionImages;
 
     // getters / setters omitted for brevity in this snippet — include all in your file
@@ -97,7 +97,7 @@ public class WrapperMCQTest {
     public String getOption4Image() { return option4Image; }
     public void setOption4Image(String option4Image) { this.option4Image = option4Image; }
 
-    public String getSolution() { return explanation; }
+    public String getExplanation() { return explanation; }
     public void setExplanation(String explanation) { this.explanation = explanation; }
 
     public List<String> getSolutionImages() { return solutionImages; }
