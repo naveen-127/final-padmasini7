@@ -28,7 +28,7 @@ public class MCQTest {
     private String option4;
     private String option4Image;
 
-    private String solution;
+    private String explanation;
     private List<String> solutionImages = new ArrayList<>();
 
     private int correctIndex;
@@ -73,8 +73,8 @@ public class MCQTest {
     public String getOption4Image() { return option4Image; }
     public void setOption4Image(String option4Image) { this.option4Image = option4Image; }
 
-    public String getSolution() { return solution; }
-    public void setSolution(String solution) { this.solution = solution; }
+    public String getSolution() { return explanation; }
+    public void setSolution(String explanation) { this.explanation = solution; }
 
     public List<String> getSolutionImages() { return solutionImages; }
     public void setSolutionImages(List<String> solutionImages) { this.solutionImages = solutionImages; }
