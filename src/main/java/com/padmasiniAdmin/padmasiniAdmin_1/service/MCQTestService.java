@@ -161,7 +161,7 @@ public class MCQTestService {
         if (data.getOption3Image() != null) q.setOption3Image(data.getOption3Image());
         if (data.getOption4() != null) q.setOption4(data.getOption4());
         if (data.getOption4Image() != null) q.setOption4Image(data.getOption4Image());
-        if (data.getSolution() != null) q.setSolution(data.getSolution());
+        if (data.getExplanation() != null) q.setExplanation(data.getExplanation());
         if (data.getSolutionImages() != null) q.setSolutionImages(sanitizeList(data.getSolutionImages(), "NO_SOLUTION_IMAGE"));
     }
 
@@ -171,7 +171,7 @@ public class MCQTestService {
         }
         q.setQuestionImages(sanitizeList(q.getQuestionImages(), "NO_QUESTION_IMAGE"));
         q.setSolutionImages(sanitizeList(q.getSolutionImages(), "NO_SOLUTION_IMAGE"));
-        if (q.getSolution() == null) q.setSolution(""); // keep explicit empty string if no solution
+        if (q.getExplanation() == null) q.setExplanation(""); // keep explicit empty string if no solution
         if (q.getTableData() == null) q.setTableData(new ArrayList<>());
     }
 
