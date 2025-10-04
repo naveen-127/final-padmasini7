@@ -1,7 +1,6 @@
 package com.padmasiniAdmin.padmasiniAdmin_1.model;
 
 import java.util.List;
-
 import jakarta.validation.constraints.NotBlank;
 
 public class WrapperUnit {
@@ -14,7 +13,6 @@ public class WrapperUnit {
 
     private List<String> keepAudioFileIds;
     private String dbname;
-
     private String unitName;
     private String explanation;
 
@@ -38,6 +36,7 @@ public class WrapperUnit {
     public List<String> getKeepAudioFileIds() {
         return keepAudioFileIds;
     }
+
     public void setKeepAudioFileIds(List<String> keepAudioFileIds) {
         this.keepAudioFileIds = keepAudioFileIds;
     }
@@ -45,6 +44,7 @@ public class WrapperUnit {
     public String getDbname() {
         return dbname;
     }
+
     public void setDbname(String dbname) {
         this.dbname = dbname;
     }
@@ -52,6 +52,7 @@ public class WrapperUnit {
     public List<MCQTest> getTest() {
         return test;
     }
+
     public void setTest(List<MCQTest> test) {
         this.test = test;
     }
@@ -59,6 +60,7 @@ public class WrapperUnit {
     public String getRootUnitId() {
         return rootUnitId;
     }
+
     public void setRootUnitId(String rootUnitId) {
         this.rootUnitId = rootUnitId;
     }
@@ -66,6 +68,7 @@ public class WrapperUnit {
     public String getSubjectName() {
         return subjectName;
     }
+
     public void setSubjectName(String subjectName) {
         this.subjectName = subjectName;
     }
@@ -73,6 +76,7 @@ public class WrapperUnit {
     public String getParentId() {
         return parentId;
     }
+
     public void setParentId(String parentId) {
         this.parentId = parentId;
     }
@@ -80,6 +84,7 @@ public class WrapperUnit {
     public String getExplanation() {
         return explanation;
     }
+
     public void setExplanation(String explanation) {
         this.explanation = explanation;
     }
@@ -87,6 +92,7 @@ public class WrapperUnit {
     public String getStandard() {
         return standard;
     }
+
     public void setStandard(String standard) {
         this.standard = standard;
     }
@@ -94,6 +100,7 @@ public class WrapperUnit {
     public String getUnitName() {
         return unitName;
     }
+
     public void setUnitName(String unitName) {
         this.unitName = unitName;
     }
@@ -101,6 +108,7 @@ public class WrapperUnit {
     public List<String> getAudioFileId() {
         return audioFileId;
     }
+
     public void setAudioFileId(List<String> audioFileId) {
         this.audioFileId = audioFileId;
     }
@@ -108,6 +116,7 @@ public class WrapperUnit {
     public List<String> getImageUrls() {
         return imageUrls;
     }
+
     public void setImageUrls(List<String> imageUrls) {
         this.imageUrls = imageUrls;
     }
@@ -115,6 +124,7 @@ public class WrapperUnit {
     public String getAiVideoUrl() {
         return aiVideoUrl;
     }
+
     public void setAiVideoUrl(String aiVideoUrl) {
         this.aiVideoUrl = aiVideoUrl;
     }
