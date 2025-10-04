@@ -2,26 +2,26 @@ package com.padmasiniAdmin.padmasiniAdmin_1.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.bson.types.ObjectId;
 
 public class Unit {
+
     private String id;
     private String unitName;
     private String parentId;
     private String explanation;
+
+    // ✅ New fields for audio, images, AI video
     private List<String> audioFileId = new ArrayList<>();
     private List<String> imageUrls = new ArrayList<>();
     private String aiVideoUrl;
+
+    private boolean assignTest; // your existing logic
     private List<Unit> units = new ArrayList<>();
-    private List<MotherMCQTest> test = new ArrayList<>();
 
-    public Unit() {
-        this.id = new ObjectId().toHexString();
-    }
-
-    public Unit(boolean withTest) {
-        this();
-        this.test = withTest ? new ArrayList<>() : null;
+    // ----- Constructors -----
+    public Unit() {}
+    public Unit(boolean assignTest) {
+        this.assignTest = assignTest;
     }
 
     // ----- Getters & Setters -----
@@ -46,21 +46,24 @@ public class Unit {
     public String getAiVideoUrl() { return aiVideoUrl; }
     public void setAiVideoUrl(String aiVideoUrl) { this.aiVideoUrl = aiVideoUrl; }
 
+    public boolean isAssignTest() { return assignTest; }
+    public void setAssignTest(boolean assignTest) { this.assignTest = assignTest; }
+
     public List<Unit> getUnits() { return units; }
     public void setUnits(List<Unit> units) { this.units = units; }
 
-    public List<MotherMCQTest> getTest() { return test; }
-    public void setTest(List<MotherMCQTest> test) { this.test = test; }
-
     @Override
     public String toString() {
-        return "Unit [id=" + id +
-                ", name=" + unitName +
-                ", parentId=" + parentId +
-                ", explanation=" + explanation +
+        return "Unit{" +
+                "id='" + id + '\'' +
+                ", unitName='" + unitName + '\'' +
+                ", parentId='" + parentId + '\'' +
+                ", explanation='" + explanation + '\'' +
                 ", audioFileId=" + audioFileId +
                 ", imageUrls=" + imageUrls +
-                ", aiVideoUrl=" + aiVideoUrl +
-                ", subUnits=" + (units != null ? units.size() : 0) + "]";
+                ", aiVideoUrl='" + aiVideoUrl + '\'' +
+                ", assignTest=" + assignTest +
+                ", units=" + units +
+                '}';
     }
 }
