@@ -10,19 +10,18 @@ public class Unit {
     private String parentId;
     private String explanation;
 
-    // ✅ New fields for audio, images, AI video
     private List<String> audioFileId = new ArrayList<>();
     private List<String> imageUrls = new ArrayList<>();
     private String aiVideoUrl;
 
-    private boolean assignTest; // your existing logic
+    private boolean assignTest;
     private List<Unit> units = new ArrayList<>();
 
-    // ----- Constructors -----
+    // ✅ Add tests field here
+    private List<MotherMCQTest> test = new ArrayList<>();
+
     public Unit() {}
-    public Unit(boolean assignTest) {
-        this.assignTest = assignTest;
-    }
+    public Unit(boolean assignTest) { this.assignTest = assignTest; }
 
     // ----- Getters & Setters -----
     public String getId() { return id; }
@@ -52,18 +51,7 @@ public class Unit {
     public List<Unit> getUnits() { return units; }
     public void setUnits(List<Unit> units) { this.units = units; }
 
-    @Override
-    public String toString() {
-        return "Unit{" +
-                "id='" + id + '\'' +
-                ", unitName='" + unitName + '\'' +
-                ", parentId='" + parentId + '\'' +
-                ", explanation='" + explanation + '\'' +
-                ", audioFileId=" + audioFileId +
-                ", imageUrls=" + imageUrls +
-                ", aiVideoUrl='" + aiVideoUrl + '\'' +
-                ", assignTest=" + assignTest +
-                ", units=" + units +
-                '}';
-    }
+    // ✅ Getter/setter for test field
+    public List<MotherMCQTest> getTest() { return test; }
+    public void setTest(List<MotherMCQTest> test) { this.test = test; }
 }
