@@ -13,17 +13,11 @@ public class UnitRequest {
     private String unitName;
     private String standard;
 
-    // ✅ Tests inside this UnitRequest
+    // ✅ Tests inside this UnitRequest (root only)
     private List<MotherMCQTest> test = new ArrayList<>();
 
     // ✅ Child units
     private List<Unit> units = new ArrayList<>();
-
-    // ✅ New fields for audio, images, explanation, AI video
-    private String explanation;
-    private List<String> audioFileId = new ArrayList<>();
-    private List<String> imageUrls = new ArrayList<>();
-    private String aiVideoUrl;
 
     // ----- Constructors -----
     public UnitRequest() {
@@ -65,39 +59,10 @@ public class UnitRequest {
         this.test = test;
     }
 
-    // ✅ New getters/setters
-    public String getExplanation() {
-        return explanation;
-    }
-    public void setExplanation(String explanation) {
-        this.explanation = explanation;
-    }
-
-    public List<String> getAudioFileId() {
-        return audioFileId;
-    }
-    public void setAudioFileId(List<String> audioFileId) {
-        this.audioFileId = audioFileId;
-    }
-
-    public List<String> getImageUrls() {
-        return imageUrls;
-    }
-    public void setImageUrls(List<String> imageUrls) {
-        this.imageUrls = imageUrls;
-    }
-
-    public String getAiVideoUrl() {
-        return aiVideoUrl;
-    }
-    public void setAiVideoUrl(String aiVideoUrl) {
-        this.aiVideoUrl = aiVideoUrl;
-    }
-
     // ----- Convenience passthroughs to match MCQTestService calls -----
     public void setTestName(String testName) {
         if (!test.isEmpty()) {
-            test.get(0).setTestName(testName); // update first test by default
+            test.get(0).setTestName(testName);
         }
     }
 
@@ -129,10 +94,6 @@ public class UnitRequest {
                 ", standard='" + standard + '\'' +
                 ", units=" + units +
                 ", test=" + test +
-                ", explanation='" + explanation + '\'' +
-                ", audioFileId=" + audioFileId +
-                ", imageUrls=" + imageUrls +
-                ", aiVideoUrl='" + aiVideoUrl + '\'' +
                 '}';
     }
 }
