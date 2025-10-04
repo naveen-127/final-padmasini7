@@ -1,13 +1,3 @@
-package com.padmasiniAdmin.padmasiniAdmin_1.controller;
-
-import com.padmasiniAdmin.padmasiniAdmin_1.model.WrapperUnit;
-import com.padmasiniAdmin.padmasiniAdmin_1.model.WrapperUnitRequest;
-import com.padmasiniAdmin.padmasiniAdmin_1.service.UnitService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
 @RestController
 @RequestMapping("/unit")
 public class UnitController {
@@ -22,7 +12,7 @@ public class UnitController {
 
     @PostMapping("/head/add")
     public String addHeadUnit(@RequestBody WrapperUnitRequest wrapper) {
-        return unitService.addNewHeadUnit(wrapper);
+        return unitService.addNewHeadUnit(wrapper); // returns String id
     }
 
     @PutMapping("/head/update")
