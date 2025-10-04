@@ -85,6 +85,8 @@ public class UnitService {
         unit.setUnitName((data.getUnitName() == null || data.getUnitName().isEmpty()) ? null : data.getUnitName());
         unit.setExplanation((data.getExplanation() == null || data.getExplanation().isEmpty()) ? null : data.getExplanation());
         unit.setAudioFileId(data.getAudioFileId());
+        unit.setImageUrls(data.getImageUrls());           // ✅ store images
+        unit.setAiVideoUrl(data.getAiVideoUrl());         // ✅ store AI video
 
         UnitRequest root = getById(data.getRootUnitId(), data.getSubjectName(), data.getDbname());
         if (root == null) return;
@@ -117,6 +119,8 @@ public class UnitService {
             root.setUnitName(data.getUnitName());
             root.setExplanation(data.getExplanation());
             root.setAudioFileId(data.getAudioFileId());
+            root.setImageUrls(data.getImageUrls());       // ✅ update images
+            root.setAiVideoUrl(data.getAiVideoUrl());     // ✅ update AI video
             updated = true;
         } else if (root.getUnits() != null) {
             for (Unit units : root.getUnits()) {
@@ -184,6 +188,8 @@ public class UnitService {
             current.setUnitName(data.getUnitName());
             current.setExplanation(data.getExplanation());
             current.setAudioFileId(data.getAudioFileId());
+            current.setImageUrls(data.getImageUrls());     // ✅ update images
+            current.setAiVideoUrl(data.getAiVideoUrl());   // ✅ update AI video
             return true;
         }
         if (current.getUnits() != null) {
@@ -198,7 +204,6 @@ public class UnitService {
         if (current.getUnits() != null) {
             boolean removed = removeUnitById(current.getUnits(), targetId);
             if (removed) return true;
-
             for (Unit child : current.getUnits()) {
                 if (deleteFromSubUnits(child, targetId)) return true;
             }
