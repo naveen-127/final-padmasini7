@@ -1,242 +1,102 @@
 package com.padmasiniAdmin.padmasiniAdmin_1.service;
 
-import com.padmasiniAdmin.padmasiniAdmin_1.model.*;
-import com.mongodb.client.MongoClient;
+import com.padmasiniAdmin.padmasiniAdmin_1.model.Unit;
+import com.padmasiniAdmin.padmasiniAdmin_1.model.WrapperUnitRequest;
+import com.padmasiniAdmin.padmasiniAdmin_1.repository.UnitRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.bson.types.ObjectId;
+
 import java.util.*;
 
 @Service
 public class UnitService {
 
     @Autowired
-    private MongoClient mongoClient;
+    private UnitRepository unitRepository;
 
-    // ----------------------------------------------------------------------
-    // ✅ Add new Unit (Subtopic)
-    // ----------------------------------------------------------------------
-    public Map<String, Object> addUnit(WrapperUnitRequest data) {
-        Map<String, Object> response = new HashMap<>();
+    public Unit createUnit(WrapperUnitRequest data) {
+        Unit unit = new Unit();
 
-        if (data == null) {
-            System.out.println("❌ addUnit: data is null");
-            response.put("error", "Invalid payload");
-            return response;
-        }
-
-        boolean assignTest = false;
-        if (data.getParentId() != null && data.getParentId().equals(data.getRootUnitId())) {
-            assignTest = true;
-            System.out.println("🟢 Adding top-level unit");
-        }
-
-        Unit unit = new Unit(assignTest);
-        unit.setId(new ObjectId().toHexString());
+        // ✅ Basic Fields
         unit.setUnitName(data.getUnitName());
         unit.setExplanation(data.getExplanation());
         unit.setParentId(data.getParentId());
+        unit.setAssignTest(data.isAssignTest());
 
-        // ✅ Handle audioFileId
+        // ✅ Audio files
         if (data.getAudioFileId() != null && !data.getAudioFileId().isEmpty()) {
             unit.setAudioFileId(new ArrayList<>(data.getAudioFileId()));
         } else {
             unit.setAudioFileId(new ArrayList<>());
         }
 
-        // ✅ Handle keepAudioFileIds (retain old ones)
-        if (data.getKeepAudioFileIds() != null && !data.getKeepAudioFileIds().isEmpty()) {
-            if (unit.getAudioFileId() == null) unit.setAudioFileId(new ArrayList<>());
-            unit.getAudioFileId().addAll(data.getKeepAudioFileIds());
-        }
-
-        // ✅ Handle imageUrls
+        // ✅ Image URLs
         if (data.getImageUrls() != null && !data.getImageUrls().isEmpty()) {
             unit.setImageUrls(new ArrayList<>(data.getImageUrls()));
         } else {
             unit.setImageUrls(new ArrayList<>());
         }
 
-        // ✅ Handle aiVideoUrl
+        // ✅ AI Video URL
         if (data.getAiVideoUrl() != null && !data.getAiVideoUrl().isEmpty()) {
             unit.setAiVideoUrl(data.getAiVideoUrl());
-        }
-
-        // Debug info
-        System.out.println("📦 Using DB: " + data.getDbname());
-        System.out.println("📘 Using Collection: " + data.getSubjectName());
-        System.out.println("🔍 Looking for Root ID: " + data.getRootUnitId());
-
-        // ✅ Fetch the root document (UnitRequest)
-        UnitRequest root = getById(data.getRootUnitId(), data.getSubjectName(), data.getDbname());
-        if (root == null) {
-            System.out.println("❌ Root unit not found: " + data.getRootUnitId());
-            response.put("error", "Root unit not found");
-            return response;
-        }
-
-        // ✅ Insert into correct parent
-        boolean inserted = false;
-        if (root.getId().equals(data.getParentId())) {
-            root.getUnits().add(unit);
-            inserted = true;
-        } else if (root.getUnits() != null) {
-            for (Unit u : root.getUnits()) {
-                if (insertIntoParent(u, data.getParentId(), unit)) {
-                    inserted = true;
-                    break;
-                }
-            }
-        }
-
-        // ✅ Save back to DB
-        if (inserted) {
-            MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, data.getDbname());
-            mongoTemplate.save(root, data.getSubjectName());
-            System.out.println("✅ Subunit inserted and saved successfully.");
-            response.put("insertedSubId", unit.getId());
-            response.put("message", "ok");
         } else {
-            System.out.println("⚠️ Parent ID not found in subunits.");
-            response.put("error", "Parent not found");
+            unit.setAiVideoUrl(null);
         }
 
-        return response;
-    }
-
-    // ----------------------------------------------------------------------
-    // ✅ Recursive helper to insert into correct parent
-    // ----------------------------------------------------------------------
-    private boolean insertIntoParent(Unit current, String parentId, Unit newUnit) {
-        if (current.getId().equals(parentId)) {
-            if (current.getUnits() == null) current.setUnits(new ArrayList<>());
-            current.getUnits().add(newUnit);
-            return true;
-        }
-
-        if (current.getUnits() != null) {
-            for (Unit u : current.getUnits()) {
-                if (insertIntoParent(u, parentId, newUnit)) {
-                    return true;
-                }
+        // ✅ Recursive subunit creation
+        List<Unit> subUnits = new ArrayList<>();
+        if (data.getUnits() != null && !data.getUnits().isEmpty()) {
+            for (WrapperUnitRequest subData : data.getUnits()) {
+                Unit subUnit = createUnit(subData);
+                subUnits.add(subUnit);
             }
         }
-        return false;
+        unit.setUnits(subUnits);
+
+        // ✅ Save to MongoDB
+        return unitRepository.save(unit);
     }
 
-    // ----------------------------------------------------------------------
-    // ✅ Fetch by ID
-    // ----------------------------------------------------------------------
-    public UnitRequest getById(String id, String collection, String dbname) {
-        if (id == null || id.isEmpty()) {
-            System.out.println("⚠️ getById: ID is null or empty");
-            return null;
-        }
-        try {
-            MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbname);
-            return mongoTemplate.findById(id, UnitRequest.class, collection);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+    public List<Unit> getAllUnits() {
+        return unitRepository.findAll();
     }
 
-    // ----------------------------------------------------------------------
-    // ✅ Get all units in a collection
-    // ----------------------------------------------------------------------
-    public List<UnitRequest> getAll(String collection, String dbname) {
-        try {
-            MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbname);
-            return mongoTemplate.findAll(UnitRequest.class, collection);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
+    public Optional<Unit> getUnitById(String id) {
+        return unitRepository.findById(id);
     }
 
-    // ----------------------------------------------------------------------
-    // ✅ Delete a unit or subunit recursively by ID
-    // ----------------------------------------------------------------------
-    public boolean deleteUnit(String dbname, String collection, String rootId, String unitId) {
-        MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbname);
-        UnitRequest root = mongoTemplate.findById(rootId, UnitRequest.class, collection);
-
-        if (root == null) return false;
-
-        if (root.getId().equals(unitId)) {
-            mongoTemplate.remove(root, collection);
-            return true;
+    public Unit updateUnit(String id, WrapperUnitRequest data) {
+        Optional<Unit> optionalUnit = unitRepository.findById(id);
+        if (optionalUnit.isEmpty()) {
+            throw new RuntimeException("Unit not found with ID: " + id);
         }
 
-        boolean deleted = deleteFromParent(root.getUnits(), unitId);
-        if (deleted) mongoTemplate.save(root, collection);
-        return deleted;
-    }
+        Unit unit = optionalUnit.get();
 
-    private boolean deleteFromParent(List<Unit> units, String unitId) {
-        if (units == null) return false;
+        // ✅ Update fields
+        unit.setUnitName(data.getUnitName());
+        unit.setExplanation(data.getExplanation());
+        unit.setAssignTest(data.isAssignTest());
 
-        Iterator<Unit> it = units.iterator();
-        while (it.hasNext()) {
-            Unit u = it.next();
-            if (u.getId().equals(unitId)) {
-                it.remove();
-                return true;
+        if (data.getAudioFileId() != null) unit.setAudioFileId(data.getAudioFileId());
+        if (data.getImageUrls() != null) unit.setImageUrls(data.getImageUrls());
+        if (data.getAiVideoUrl() != null) unit.setAiVideoUrl(data.getAiVideoUrl());
+
+        // ✅ Update sub-units
+        if (data.getUnits() != null && !data.getUnits().isEmpty()) {
+            List<Unit> subUnits = new ArrayList<>();
+            for (WrapperUnitRequest subData : data.getUnits()) {
+                Unit subUnit = createUnit(subData);
+                subUnits.add(subUnit);
             }
-            if (deleteFromParent(u.getUnits(), unitId)) {
-                return true;
-            }
+            unit.setUnits(subUnits);
         }
-        return false;
+
+        return unitRepository.save(unit);
     }
 
-    // ----------------------------------------------------------------------
-    // ✅ Update an existing subunit by ID
-    // ----------------------------------------------------------------------
-    public boolean updateUnit(String dbname, String collection, String rootId, Unit updatedUnit) {
-        MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbname);
-        UnitRequest root = mongoTemplate.findById(rootId, UnitRequest.class, collection);
-
-        if (root == null) return false;
-        boolean updated = updateInParent(root, updatedUnit);
-        if (updated) mongoTemplate.save(root, collection);
-        return updated;
-    }
-
-    private boolean updateInParent(UnitRequest root, Unit updated) {
-        if (root.getId().equals(updated.getId())) {
-            root.setUnitName(updated.getUnitName());
-            root.setExplanation(updated.getExplanation());
-            root.setAudioFileId(updated.getAudioFileId());
-            root.setImageUrls(updated.getImageUrls());
-            root.setAiVideoUrl(updated.getAiVideoUrl());
-            return true;
-        }
-
-        if (root.getUnits() != null) {
-            for (Unit u : root.getUnits()) {
-                if (updateInChild(u, updated)) return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean updateInChild(Unit current, Unit updated) {
-        if (current.getId().equals(updated.getId())) {
-            current.setUnitName(updated.getUnitName());
-            current.setExplanation(updated.getExplanation());
-            current.setAudioFileId(updated.getAudioFileId());
-            current.setImageUrls(updated.getImageUrls());
-            current.setAiVideoUrl(updated.getAiVideoUrl());
-            return true;
-        }
-
-        if (current.getUnits() != null) {
-            for (Unit u : current.getUnits()) {
-                if (updateInChild(u, updated)) return true;
-            }
-        }
-        return false;
+    public void deleteUnit(String id) {
+        unitRepository.deleteById(id);
     }
 }
