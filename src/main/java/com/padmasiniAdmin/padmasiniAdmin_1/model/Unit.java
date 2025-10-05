@@ -4,47 +4,70 @@ import java.util.List;
 
 public class Unit {
 
-    private String id;
     private String unitName;
     private String explanation;
-    private String parentId;
-    private List<Unit> units;
+    private List<String> imageUrls;
     private List<String> audioFileId;
-    private List<String> imageUrls;  // ✅ fixed
-    private String aiVideoUrl;       // ✅ fixed
-    private boolean assignTest;
+    private String aiVideoUrl;
+
+    // if you had a test field before, add it back:
+    private Test test;
 
     public Unit() {}
 
-    public Unit(boolean assignTest) {
-        this.assignTest = assignTest;
+    public Unit(String unitName, String explanation, List<String> imageUrls, List<String> audioFileId, String aiVideoUrl) {
+        this.unitName = unitName;
+        this.explanation = explanation;
+        this.imageUrls = imageUrls;
+        this.audioFileId = audioFileId;
+        this.aiVideoUrl = aiVideoUrl;
     }
 
-    // ✅ Getters and Setters
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public String getUnitName() {
+        return unitName;
+    }
 
-    public String getUnitName() { return unitName; }
-    public void setUnitName(String unitName) { this.unitName = unitName; }
+    public void setUnitName(String unitName) {
+        this.unitName = unitName;
+    }
 
-    public String getExplanation() { return explanation; }
-    public void setExplanation(String explanation) { this.explanation = explanation; }
+    public String getExplanation() {
+        return explanation;
+    }
 
-    public String getParentId() { return parentId; }
-    public void setParentId(String parentId) { this.parentId = parentId; }
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
+    }
 
-    public List<Unit> getUnits() { return units; }
-    public void setUnits(List<Unit> units) { this.units = units; }
+    public List<String> getImageUrls() {
+        return imageUrls;
+    }
 
-    public List<String> getAudioFileId() { return audioFileId; }
-    public void setAudioFileId(List<String> audioFileId) { this.audioFileId = audioFileId; }
+    public void setImageUrls(List<String> imageUrls) {
+        this.imageUrls = imageUrls;
+    }
 
-    public List<String> getImageUrls() { return imageUrls; }
-    public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
+    public List<String> getAudioFileId() {
+        return audioFileId;
+    }
 
-    public String getAiVideoUrl() { return aiVideoUrl; }
-    public void setAiVideoUrl(String aiVideoUrl) { this.aiVideoUrl = aiVideoUrl; }
+    public void setAudioFileId(List<String> audioFileId) {
+        this.audioFileId = audioFileId;
+    }
 
-    public boolean isAssignTest() { return assignTest; }
-    public void setAssignTest(boolean assignTest) { this.assignTest = assignTest; }
+    public String getAiVideoUrl() {
+        return aiVideoUrl;
+    }
+
+    public void setAiVideoUrl(String aiVideoUrl) {
+        this.aiVideoUrl = aiVideoUrl;
+    }
+
+    public Test getTest() {
+        return test;
+    }
+
+    public void setTest(Test test) {
+        this.test = test;
+    }
 }
