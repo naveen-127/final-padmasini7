@@ -1,129 +1,61 @@
 package com.padmasiniAdmin.padmasiniAdmin_1.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.validation.constraints.NotBlank;
+import org.bson.types.ObjectId;
 
-public class WrapperUnit {
+public class Unit {
 
-    @NotBlank(message = "Parent ID is required")
-    private String parentId;
-
-    @NotBlank(message = "Standard is required")
-    private String standard;
-
-    private List<String> keepAudioFileIds;
-    private String dbname;
-
+    private String id;
     private String unitName;
+    private String parentId;   // links back to parent
     private String explanation;
 
-    @NotBlank(message = "Root Unit ID is required")
-    private String rootUnitId;
-
-    private String subjectName;
-
-    // ✅ Audio files
     private List<String> audioFileId;
-
-    // ✅ Images
     private List<String> imageUrls;
 
-    // ✅ AI Video
-    private String aiVideoUrl;
+    private List<Unit> units = new ArrayList<>();        // subtopics
+    private List<MotherMCQTest> test = new ArrayList<>(); // optional tests
 
-    private List<MCQTest> test;
-
-    // ----- Getters & Setters -----
-    public List<String> getKeepAudioFileIds() {
-        return keepAudioFileIds;
-    }
-    public void setKeepAudioFileIds(List<String> keepAudioFileIds) {
-        this.keepAudioFileIds = keepAudioFileIds;
+    public Unit() {
+        this.id = new ObjectId().toHexString();
     }
 
-    public String getDbname() {
-        return dbname;
-    }
-    public void setDbname(String dbname) {
-        this.dbname = dbname;
+    public Unit(boolean withTest) {
+        this();
+        this.test = withTest ? new ArrayList<>() : null;
     }
 
-    public List<MCQTest> getTest() {
-        return test;
-    }
-    public void setTest(List<MCQTest> test) {
-        this.test = test;
-    }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
-    public String getRootUnitId() {
-        return rootUnitId;
-    }
-    public void setRootUnitId(String rootUnitId) {
-        this.rootUnitId = rootUnitId;
-    }
+    public String getUnitName() { return unitName; }
+    public void setUnitName(String unitName) { this.unitName = unitName; }
 
-    public String getSubjectName() {
-        return subjectName;
-    }
-    public void setSubjectName(String subjectName) {
-        this.subjectName = subjectName;
-    }
+    public String getParentId() { return parentId; }
+    public void setParentId(String parentId) { this.parentId = parentId; }
 
-    public String getParentId() {
-        return parentId;
-    }
-    public void setParentId(String parentId) {
-        this.parentId = parentId;
-    }
+    public String getExplanation() { return explanation; }
+    public void setExplanation(String explanation) { this.explanation = explanation; }
 
-    public String getExplanation() {
-        return explanation;
-    }
-    public void setExplanation(String explanation) {
-        this.explanation = explanation;
-    }
+    public List<String> getAudioFileId() { return audioFileId; }
+    public void setAudioFileId(List<String> audioFileId) { this.audioFileId = audioFileId; }
 
-    public String getStandard() {
-        return standard;
-    }
-    public void setStandard(String standard) {
-        this.standard = standard;
-    }
+    public List<String> getImageUrls() { return imageUrls; }
+    public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
 
-    public String getUnitName() {
-        return unitName;
-    }
-    public void setUnitName(String unitName) {
-        this.unitName = unitName;
-    }
+    public List<Unit> getUnits() { return units; }
+    public void setUnits(List<Unit> units) { this.units = units; }
 
-    public List<String> getAudioFileId() {
-        return audioFileId;
-    }
-    public void setAudioFileId(List<String> audioFileId) {
-        this.audioFileId = audioFileId;
-    }
-
-    public List<String> getImageUrls() {
-        return imageUrls;
-    }
-    public void setImageUrls(List<String> imageUrls) {
-        this.imageUrls = imageUrls;
-    }
-
-    public String getAiVideoUrl() {
-        return aiVideoUrl;
-    }
-    public void setAiVideoUrl(String aiVideoUrl) {
-        this.aiVideoUrl = aiVideoUrl;
-    }
+    public List<MotherMCQTest> getTest() { return test; }
+    public void setTest(List<MotherMCQTest> test) { this.test = test; }
 
     @Override
     public String toString() {
-        return "WrapperUnit [parentId=" + parentId + ", explanation=" + explanation + ", dbname=" + dbname
-                + ", standard=" + standard + ", unitName=" + unitName + ", rootUnitId=" + rootUnitId + ", subjectName="
-                + subjectName + ", audioFileId=" + audioFileId + ", imageUrls=" + imageUrls
-                + ", aiVideoUrl=" + aiVideoUrl + ", test=" + test + "]";
+        return "Unit [id=" + id +
+                ", name=" + unitName +
+                ", parentId=" + parentId +
+                ", subUnits=" + (units != null ? units.size() : 0) + "]";
     }
 }
