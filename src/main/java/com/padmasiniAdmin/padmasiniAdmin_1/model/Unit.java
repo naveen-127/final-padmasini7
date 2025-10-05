@@ -1,119 +1,61 @@
 package com.padmasiniAdmin.padmasiniAdmin_1.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import java.util.ArrayList;
 import java.util.List;
 
-@Document(collection = "unit")
+import org.bson.types.ObjectId;
+
 public class Unit {
 
-    @Id
     private String id;
-
     private String unitName;
-    private String parentId;
-    private String rootId;
-    private String subjectName;
-    private String dbname;
-    private boolean assignTest;
-
-    private List<Unit> units;
-    private List<String> imageUrls;
-    private String aiVideoUrl;
-    private String audioFileId;
+    private String parentId;   // links back to parent
     private String explanation;
 
-    private List<Test> tests; // ✅ Added back since MCQTestService expects it
+    private List<String> audioFileId;
+    private List<String> imageUrls;
 
-    // Getters and Setters
-    public String getId() {
-        return id;
-    }
-    public void setId(String id) {
-        this.id = id;
-    }
+    private List<Unit> units = new ArrayList<>();        // subtopics
+    private List<MotherMCQTest> test = new ArrayList<>(); // optional tests
 
-    public String getUnitName() {
-        return unitName;
-    }
-    public void setUnitName(String unitName) {
-        this.unitName = unitName;
+    public Unit() {
+        this.id = new ObjectId().toHexString();
     }
 
-    public String getParentId() {
-        return parentId;
-    }
-    public void setParentId(String parentId) {
-        this.parentId = parentId;
+    public Unit(boolean withTest) {
+        this();
+        this.test = withTest ? new ArrayList<>() : null;
     }
 
-    public String getRootId() {
-        return rootId;
-    }
-    public void setRootId(String rootId) {
-        this.rootId = rootId;
-    }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
-    public String getSubjectName() {
-        return subjectName;
-    }
-    public void setSubjectName(String subjectName) {
-        this.subjectName = subjectName;
-    }
+    public String getUnitName() { return unitName; }
+    public void setUnitName(String unitName) { this.unitName = unitName; }
 
-    public String getDbname() {
-        return dbname;
-    }
-    public void setDbname(String dbname) {
-        this.dbname = dbname;
-    }
+    public String getParentId() { return parentId; }
+    public void setParentId(String parentId) { this.parentId = parentId; }
 
-    public boolean isAssignTest() {
-        return assignTest;
-    }
-    public void setAssignTest(boolean assignTest) {
-        this.assignTest = assignTest;
-    }
+    public String getExplanation() { return explanation; }
+    public void setExplanation(String explanation) { this.explanation = explanation; }
 
-    public List<Unit> getUnits() {
-        return units;
-    }
-    public void setUnits(List<Unit> units) {
-        this.units = units;
-    }
+    public List<String> getAudioFileId() { return audioFileId; }
+    public void setAudioFileId(List<String> audioFileId) { this.audioFileId = audioFileId; }
 
-    public List<String> getImageUrls() {
-        return imageUrls;
-    }
-    public void setImageUrls(List<String> imageUrls) {
-        this.imageUrls = imageUrls;
-    }
+    public List<String> getImageUrls() { return imageUrls; }
+    public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
 
-    public String getAiVideoUrl() {
-        return aiVideoUrl;
-    }
-    public void setAiVideoUrl(String aiVideoUrl) {
-        this.aiVideoUrl = aiVideoUrl;
-    }
+    public List<Unit> getUnits() { return units; }
+    public void setUnits(List<Unit> units) { this.units = units; }
 
-    public String getAudioFileId() {
-        return audioFileId;
-    }
-    public void setAudioFileId(String audioFileId) {
-        this.audioFileId = audioFileId;
-    }
+    public List<MotherMCQTest> getTest() { return test; }
+    public void setTest(List<MotherMCQTest> test) { this.test = test; }
 
-    public String getExplanation() {
-        return explanation;
-    }
-    public void setExplanation(String explanation) {
-        this.explanation = explanation;
-    }
-
-    public List<Test> getTests() {
-        return tests;
-    }
-    public void setTests(List<Test> tests) {
-        this.tests = tests;
+    @Override
+    public String toString() {
+        return "Unit [id=" + id +
+                ", name=" + unitName +
+                ", parentId=" + parentId +
+                ", subUnits=" + (units != null ? units.size() : 0) + "]";
     }
 }
