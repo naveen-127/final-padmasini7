@@ -2,21 +2,18 @@ package com.padmasiniAdmin.padmasiniAdmin_1.model;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.bson.types.ObjectId;
 
 public class Unit {
-
     private String id;
     private String unitName;
-    private String parentId;   // links back to parent
+    private String parentId;
     private String explanation;
-
     private List<String> audioFileId;
     private List<String> imageUrls;
-
-    private List<Unit> units = new ArrayList<>();        // subtopics
-    private List<MotherMCQTest> test = new ArrayList<>(); // optional tests
+    private String aiVideoUrl;            // NEW
+    private List<Unit> units = new ArrayList<>();
+    private List<MotherMCQTest> test = new ArrayList<>();
 
     public Unit() {
         this.id = new ObjectId().toHexString();
@@ -27,6 +24,7 @@ public class Unit {
         this.test = withTest ? new ArrayList<>() : null;
     }
 
+    // getters + setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
@@ -45,6 +43,9 @@ public class Unit {
     public List<String> getImageUrls() { return imageUrls; }
     public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
 
+    public String getAiVideoUrl() { return aiVideoUrl; }
+    public void setAiVideoUrl(String aiVideoUrl) { this.aiVideoUrl = aiVideoUrl; }
+
     public List<Unit> getUnits() { return units; }
     public void setUnits(List<Unit> units) { this.units = units; }
 
@@ -53,9 +54,7 @@ public class Unit {
 
     @Override
     public String toString() {
-        return "Unit [id=" + id +
-                ", name=" + unitName +
-                ", parentId=" + parentId +
-                ", subUnits=" + (units != null ? units.size() : 0) + "]";
+        return "Unit [id=" + id + ", name=" + unitName + ", parentId=" + parentId
+                + ", subUnits=" + (units != null ? units.size() : 0) + "]";
     }
 }
