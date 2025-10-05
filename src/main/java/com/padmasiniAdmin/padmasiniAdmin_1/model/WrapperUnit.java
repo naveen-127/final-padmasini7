@@ -10,8 +10,8 @@ public class WrapperUnitRequest {
     private String parentId;
     private List<WrapperUnitRequest> units;
     private List<String> audioFileId;
-    private List<String> imageUrls;   // ✅ added
-    private String aiVideoUrl;        // ✅ added
+    private List<String> imageUrls;
+    private String aiVideoUrl;
     private boolean assignTest;
 
     public WrapperUnitRequest() {}
