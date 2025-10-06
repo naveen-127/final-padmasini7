@@ -96,13 +96,12 @@ public class UnitService {
             return;
         }
 
-        Unit newUnit = new Unit(data.getParentId() != null && data.getParentId().equals(data.getRootUnitId()));
+        Unit newUnit = new Unit();
         newUnit.setParentId(data.getParentId());
         newUnit.setUnitName(data.getUnitName());
         newUnit.setExplanation(data.getExplanation());
-        newUnit.setAudioFileId(data.getAudioFileId() != null && !data.getAudioFileId().isEmpty()
-                ? data.getAudioFileId()
-                : null);
+        newUnit.setAudioFileId(data.getAudioFileId());
+        newUnit.setAiVideoUrl(data.getAiVideoUrl()); // ✅ NEW FIELD
 
         boolean inserted = false;
         if (root.getId().equals(data.getParentId())) {
@@ -130,10 +129,8 @@ public class UnitService {
             current.getUnits().add(newUnit);
             return true;
         }
-        if (current.getUnits() != null) {
-            for (Unit child : current.getUnits()) {
-                if (insertIntoParent(child, targetParentId, newUnit)) return true;
-            }
+        for (Unit child : current.getUnits()) {
+            if (insertIntoParent(child, targetParentId, newUnit)) return true;
         }
         return false;
     }
@@ -161,12 +158,11 @@ public class UnitService {
             current.setUnitName(data.getUnitName());
             current.setExplanation(data.getExplanation());
             current.setAudioFileId(data.getAudioFileId());
+            current.setAiVideoUrl(data.getAiVideoUrl()); // ✅ update videos too
             return true;
         }
-        if (current.getUnits() != null) {
-            for (Unit child : current.getUnits()) {
-                if (updateParent(child, targetParentId, data)) return true;
-            }
+        for (Unit child : current.getUnits()) {
+            if (updateParent(child, targetParentId, data)) return true;
         }
         return false;
     }
@@ -180,25 +176,11 @@ public class UnitService {
             return;
         }
 
-        boolean deleted = false;
-
-        if (root.getId().equals(data.getParentId())) {
-            if (root.getUnits() != null) {
-                for (Unit u : root.getUnits()) deleteAllAudioFiles(u);
-            }
-            mongoTemplate.remove(Query.query(Criteria.where("_id").is(root.getId())),
-                    UnitRequest.class, data.getSubjectName());
-            System.out.println("✅ Root unit deleted successfully.");
-            return;
-        }
-
-        if (root.getUnits() != null) {
-            deleted = removeUnitById(root.getUnits(), data.getParentId());
-        }
+        boolean deleted = removeUnitById(root.getUnits(), data.getParentId());
 
         if (deleted) {
             mongoTemplate.save(root, data.getSubjectName());
-            System.out.println("✅ Unit deleted successfully.");
+            System.out.println("✅ Unit deleted successfully (with media).");
         } else {
             System.out.println("⚠️ Parent ID not found for deletion.");
         }
@@ -209,55 +191,50 @@ public class UnitService {
         while (iterator.hasNext()) {
             Unit unit = iterator.next();
             if (unit.getId() != null && unit.getId().equals(targetId)) {
-                deleteAllAudioFiles(unit);
+                deleteAllMediaFiles(unit);
                 iterator.remove();
                 return true;
             }
-            if (unit.getUnits() != null && removeUnitById(unit.getUnits(), targetId)) {
-                return true;
-            }
+            if (removeUnitById(unit.getUnits(), targetId)) return true;
         }
         return false;
     }
 
     /* ---------------------------------------------------------
-     * AUDIO FILE MANAGEMENT (AWS S3)
+     * AUDIO + VIDEO FILE MANAGEMENT (AWS S3)
      * --------------------------------------------------------- */
 
-    public void deleteAudioFromS3(String fileUrl) {
+    private void deleteAllMediaFiles(Unit unit) {
+        if (unit.getAudioFileId() != null) {
+            for (String audioUrl : unit.getAudioFileId()) deleteFromS3(audioUrl);
+        }
+        if (unit.getAiVideoUrl() != null) {
+            for (String videoUrl : unit.getAiVideoUrl()) deleteFromS3(videoUrl);
+        }
+        for (Unit sub : unit.getUnits()) deleteAllMediaFiles(sub);
+    }
+
+    private void deleteFromS3(String fileUrl) {
         if (fileUrl == null || !fileUrl.contains(".amazonaws.com/")) {
             System.err.println("⚠️ Invalid S3 URL: " + fileUrl);
             return;
         }
 
-        String fileKey = fileUrl.split(".amazonaws.com/")[1];
+        String key = fileUrl.split(".amazonaws.com/")[1];
         try (S3Client s3 = S3Client.builder()
                 .region(region)
                 .credentialsProvider(DefaultCredentialsProvider.create())
                 .build()) {
 
-            DeleteObjectRequest deleteRequest = DeleteObjectRequest.builder()
+            DeleteObjectRequest req = DeleteObjectRequest.builder()
                     .bucket(bucketName)
-                    .key(fileKey)
+                    .key(key)
                     .build();
+            s3.deleteObject(req);
+            System.out.println("🗑️ Deleted from S3: " + key);
 
-            s3.deleteObject(deleteRequest);
-            System.out.println("🗑️ Deleted from S3: " + fileKey);
         } catch (Exception e) {
-            System.err.println("❌ Failed to delete from S3: " + e.getMessage());
-        }
-    }
-
-    private void deleteAllAudioFiles(Unit unit) {
-        if (unit.getAudioFileId() != null) {
-            for (String audioUrl : unit.getAudioFileId()) {
-                deleteAudioFromS3(audioUrl);
-            }
-        }
-        if (unit.getUnits() != null) {
-            for (Unit sub : unit.getUnits()) {
-                deleteAllAudioFiles(sub);
-            }
+            System.err.println("❌ Failed to delete: " + e.getMessage());
         }
     }
 
@@ -265,13 +242,12 @@ public class UnitService {
      * FETCH UTILITIES
      * --------------------------------------------------------- */
 
-    public UnitRequest getById(String id, String collectionName, String dbName) {
+    public UnitRequest getById(String id, String collection, String dbName) {
         MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbName);
         try {
-            return mongoTemplate.findById(new ObjectId(id), UnitRequest.class, collectionName);
+            return mongoTemplate.findById(new ObjectId(id), UnitRequest.class, collection);
         } catch (IllegalArgumentException e) {
-            // Fallback: If ID is a string instead of ObjectId
-            return mongoTemplate.findById(id, UnitRequest.class, collectionName);
+            return mongoTemplate.findById(id, UnitRequest.class, collection);
         }
     }
 }
