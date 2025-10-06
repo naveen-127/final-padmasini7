@@ -4,126 +4,91 @@ import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
 
+/**
+ * Wrapper class used for frontend requests to add/update/delete units.
+ * Frontend sends URLs (not raw files) for audio, images, and AI video.
+ */
 public class WrapperUnit {
 
+    // ----- Basic Info -----
     @NotBlank(message = "Parent ID is required")
     private String parentId;
-
-    @NotBlank(message = "Standard is required")
-    private String standard;
-
-    private List<String> keepAudioFileIds;
-    private String dbname;
-
-    private String unitName;
-    private String explanation;
 
     @NotBlank(message = "Root Unit ID is required")
     private String rootUnitId;
 
+    @NotBlank(message = "Standard is required")
+    private String standard;
+
+    private String unitName;
+    private String explanation;
+
+    // ----- Database Info -----
+    private String dbname;
     private String subjectName;
 
-    // ✅ Audio files
-    private List<String> audioFileId;
+    // ----- Media URLs -----
+    private List<String> audioFileId;     // S3 URLs of uploaded audio files
+    private List<String> imageUrls;       // S3 URLs of uploaded images
+    private String aiVideoUrl;            // S3 URL of generated/AI video
 
-    // ✅ Images
-    private List<String> imageUrls;
+    // ----- Audio Management -----
+    private List<String> keepAudioFileIds; // IDs to retain on update
 
-    // ✅ AI Video
-    private String aiVideoUrl;
-
+    // ----- Optional Tests -----
     private List<MCQTest> test;
 
     // ----- Getters & Setters -----
-    public List<String> getKeepAudioFileIds() {
-        return keepAudioFileIds;
-    }
-    public void setKeepAudioFileIds(List<String> keepAudioFileIds) {
-        this.keepAudioFileIds = keepAudioFileIds;
-    }
+    public String getParentId() { return parentId; }
+    public void setParentId(String parentId) { this.parentId = parentId; }
 
-    public String getDbname() {
-        return dbname;
-    }
-    public void setDbname(String dbname) {
-        this.dbname = dbname;
-    }
+    public String getRootUnitId() { return rootUnitId; }
+    public void setRootUnitId(String rootUnitId) { this.rootUnitId = rootUnitId; }
 
-    public List<MCQTest> getTest() {
-        return test;
-    }
-    public void setTest(List<MCQTest> test) {
-        this.test = test;
-    }
+    public String getStandard() { return standard; }
+    public void setStandard(String standard) { this.standard = standard; }
 
-    public String getRootUnitId() {
-        return rootUnitId;
-    }
-    public void setRootUnitId(String rootUnitId) {
-        this.rootUnitId = rootUnitId;
-    }
+    public String getUnitName() { return unitName; }
+    public void setUnitName(String unitName) { this.unitName = unitName; }
 
-    public String getSubjectName() {
-        return subjectName;
-    }
-    public void setSubjectName(String subjectName) {
-        this.subjectName = subjectName;
-    }
+    public String getExplanation() { return explanation; }
+    public void setExplanation(String explanation) { this.explanation = explanation; }
 
-    public String getParentId() {
-        return parentId;
-    }
-    public void setParentId(String parentId) {
-        this.parentId = parentId;
-    }
+    public String getDbname() { return dbname; }
+    public void setDbname(String dbname) { this.dbname = dbname; }
 
-    public String getExplanation() {
-        return explanation;
-    }
-    public void setExplanation(String explanation) {
-        this.explanation = explanation;
-    }
+    public String getSubjectName() { return subjectName; }
+    public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
 
-    public String getStandard() {
-        return standard;
-    }
-    public void setStandard(String standard) {
-        this.standard = standard;
-    }
+    public List<String> getAudioFileId() { return audioFileId; }
+    public void setAudioFileId(List<String> audioFileId) { this.audioFileId = audioFileId; }
 
-    public String getUnitName() {
-        return unitName;
-    }
-    public void setUnitName(String unitName) {
-        this.unitName = unitName;
-    }
+    public List<String> getImageUrls() { return imageUrls; }
+    public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
 
-    public List<String> getAudioFileId() {
-        return audioFileId;
-    }
-    public void setAudioFileId(List<String> audioFileId) {
-        this.audioFileId = audioFileId;
-    }
+    public String getAiVideoUrl() { return aiVideoUrl; }
+    public void setAiVideoUrl(String aiVideoUrl) { this.aiVideoUrl = aiVideoUrl; }
 
-    public List<String> getImageUrls() {
-        return imageUrls;
-    }
-    public void setImageUrls(List<String> imageUrls) {
-        this.imageUrls = imageUrls;
-    }
+    public List<String> getKeepAudioFileIds() { return keepAudioFileIds; }
+    public void setKeepAudioFileIds(List<String> keepAudioFileIds) { this.keepAudioFileIds = keepAudioFileIds; }
 
-    public String getAiVideoUrl() {
-        return aiVideoUrl;
-    }
-    public void setAiVideoUrl(String aiVideoUrl) {
-        this.aiVideoUrl = aiVideoUrl;
-    }
+    public List<MCQTest> getTest() { return test; }
+    public void setTest(List<MCQTest> test) { this.test = test; }
 
     @Override
     public String toString() {
-        return "WrapperUnit [parentId=" + parentId + ", explanation=" + explanation + ", dbname=" + dbname
-                + ", standard=" + standard + ", unitName=" + unitName + ", rootUnitId=" + rootUnitId + ", subjectName="
-                + subjectName + ", audioFileId=" + audioFileId + ", imageUrls=" + imageUrls
-                + ", aiVideoUrl=" + aiVideoUrl + ", test=" + test + "]";
+        return "WrapperUnit [" +
+                "parentId=" + parentId +
+                ", rootUnitId=" + rootUnitId +
+                ", standard=" + standard +
+                ", unitName=" + unitName +
+                ", explanation=" + explanation +
+                ", dbname=" + dbname +
+                ", subjectName=" + subjectName +
+                ", audioFileId=" + audioFileId +
+                ", imageUrls=" + imageUrls +
+                ", aiVideoUrl=" + aiVideoUrl +
+                ", keepAudioFileIds=" + keepAudioFileIds +
+                ", test=" + test + "]";
     }
 }
