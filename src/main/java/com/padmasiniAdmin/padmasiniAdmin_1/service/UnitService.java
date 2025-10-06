@@ -94,10 +94,6 @@ public class UnitService {
     // 🔹 Subunit CRUD
     // =============================
     public void addUnit(WrapperUnit data) {
-            // ✅ Debugging - check what frontend actually sends
-    System.out.println("🖼 Received imageUrls: " + data.getImageUrls());
-    System.out.println("🎧 Received audioFileIds: " + data.getAudioFileId());
-    
         UnitRequest root = getById(data.getRootUnitId(), data.getSubjectName(), data.getDbname());
         if (root == null) {
             System.out.println("❌ Root unit not found");
@@ -146,7 +142,7 @@ public class UnitService {
 
         if (root.getId().equals(data.getParentId())) {
             root.setUnitName(data.getUnitName());
-            // root.setExplanation(data.getExplanation());
+            root.setExplanation(data.getExplanation());
             updated = true;
         } else if (root.getUnits() != null) {
             for (Unit unit : root.getUnits()) {
