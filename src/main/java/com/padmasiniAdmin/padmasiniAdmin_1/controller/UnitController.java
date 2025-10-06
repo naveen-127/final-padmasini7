@@ -8,64 +8,75 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.padmasiniAdmin.padmasiniAdmin_1.model.UnitRequest;
+import com.padmasiniAdmin.padmasiniAdmin_1.model.Unit;
 import com.padmasiniAdmin.padmasiniAdmin_1.model.WrapperUnit;
-import com.padmasiniAdmin.padmasiniAdmin_1.model.WrapperUnitRequest;
 import com.padmasiniAdmin.padmasiniAdmin_1.service.UnitService;
 
 @RestController
+@RequestMapping("/unit")
 public class UnitController {
 
     @Autowired
     private UnitService unitService;
 
+    /* ---------------------------------------------------------
+     *  HEAD-UNIT ENDPOINTS
+     * --------------------------------------------------------- */
+
     @GetMapping("/getAllUnits/{dbname}/{subjectName}/{standard}")
-    public List<UnitRequest> getUnitsBySubject(@PathVariable String dbname,
-                                               @PathVariable String subjectName,
-                                               @PathVariable String standard) {
+    public List<Unit> getUnitsBySubject(@PathVariable String dbname,
+                                        @PathVariable String subjectName,
+                                        @PathVariable String standard) {
         return unitService.getAllUnit(dbname, subjectName, standard);
     }
 
-    @PostMapping("/addNewHeadUnit")
-    public ResponseEntity<Map<String, String>> addHeadUnit(@RequestBody WrapperUnitRequest request) {
+    @PostMapping("/addHeadUnit")
+    public ResponseEntity<Map<String, String>> addHeadUnit(@RequestBody WrapperUnit request) {
         Map<String, String> response = new HashMap<>();
-        if (unitService.addNewHeadUnit(request)) response.put("status", "pass");
-        else response.put("status", "failed");
+        Unit unit = request.getUnit();
+        boolean success = unitService.addNewHeadUnit(unit, request.getDbname(), request.getSubjectName());
+        response.put("status", success ? "pass" : "failed");
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/updateHeadUnit/{newUnitName}")
-    public ResponseEntity<Map<String, String>> updateHeadUnit(@RequestBody WrapperUnitRequest request,
-                                                              @PathVariable String newUnitName) {
+    @PutMapping("/updateHeadUnit")
+    public ResponseEntity<Map<String, String>> updateHeadUnit(@RequestBody WrapperUnit request,
+                                                              @RequestParam String newUnitName) {
         Map<String, String> response = new HashMap<>();
-        if (unitService.updateHeadUnitName(request, newUnitName)) response.put("status", "pass");
-        else response.put("status", "failed");
+        Unit unit = request.getUnit();
+        boolean success = unitService.updateHeadUnitName(unit, newUnitName, request.getDbname(), request.getSubjectName());
+        response.put("status", success ? "pass" : "failed");
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/deleteHeadUnit")
-    public ResponseEntity<Map<String, String>> deleteHeadUnit(@RequestBody WrapperUnitRequest request) {
+    public ResponseEntity<Map<String, String>> deleteHeadUnit(@RequestBody WrapperUnit request) {
         Map<String, String> response = new HashMap<>();
-        if (unitService.deleteHeadUnit(request)) response.put("status", "pass");
-        else response.put("status", "failed");
+        Unit unit = request.getUnit();
+        boolean success = unitService.deleteHeadUnit(unit, request.getDbname(), request.getSubjectName());
+        response.put("status", success ? "pass" : "failed");
         return ResponseEntity.ok(response);
     }
 
+    /* ---------------------------------------------------------
+     *  SUB-UNIT ENDPOINTS
+     * --------------------------------------------------------- */
+
     @DeleteMapping("/deleteUnit")
-    public ResponseEntity<Map<String, String>> deleteUnit(@RequestBody WrapperUnit unit) {
-        unitService.deleteUnit(unit);
+    public ResponseEntity<Map<String, String>> deleteUnit(@RequestBody WrapperUnit request) {
+        unitService.deleteUnit(request);
         return ResponseEntity.ok(Map.of("status", "deleted"));
     }
 
-    @PostMapping("/updateSubsection")
-    public ResponseEntity<Map<String, String>> updateSubUnit(@RequestPart("unit") WrapperUnit unit) {
-        unitService.updateUnit(unit);
+    @PostMapping("/updateSubUnit")
+    public ResponseEntity<Map<String, String>> updateSubUnit(@RequestBody WrapperUnit request) {
+        unitService.updateUnit(request);
         return ResponseEntity.ok(Map.of("status", "updated"));
     }
 
-    @PostMapping("/addNewSubsection")
-    public ResponseEntity<Map<String, String>> addSubUnit(@RequestPart("unit") WrapperUnit unit) {
-        unitService.addUnit(unit);
+    @PostMapping("/addSubUnit")
+    public ResponseEntity<Map<String, String>> addSubUnit(@RequestBody WrapperUnit request) {
+        unitService.addUnit(request);
         return ResponseEntity.ok(Map.of("status", "success"));
     }
 }
