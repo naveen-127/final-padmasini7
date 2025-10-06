@@ -10,9 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.mongodb.client.MongoClient;
 import com.padmasiniAdmin.padmasiniAdmin_1.model.Unit;
-import com.padmasiniAdmin.padmasiniAdmin_1.model.UnitRequest;
 import com.padmasiniAdmin.padmasiniAdmin_1.model.WrapperUnit;
-import com.padmasiniAdmin.padmasiniAdmin_1.model.WrapperUnitRequest;
 
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -42,12 +40,10 @@ public class UnitService {
         return mongoTemplate.exists(query, Unit.class, collectionName);
     }
 
-    public boolean addNewHeadUnit(WrapperUnitRequest request) {
-        MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, request.getDbname());
-        if (!headUnitExist(request.getDbname(), request.getUnit().getUnitName(), request.getSubjectName())) {
-            // convert UnitRequest → Unit
-            Unit head = convertToUnit(request.getUnit());
-            mongoTemplate.save(head, request.getSubjectName());
+    public boolean addNewHeadUnit(Unit unit, String dbName, String subjectName) {
+        MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbName);
+        if (!headUnitExist(dbName, unit.getUnitName(), subjectName)) {
+            mongoTemplate.save(unit, subjectName);
             System.out.println("✅ Head unit saved successfully.");
             return true;
         }
@@ -55,11 +51,11 @@ public class UnitService {
         return false;
     }
 
-    public boolean deleteHeadUnit(WrapperUnitRequest request) {
-        MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, request.getDbname());
-        if (headUnitExist(request.getDbname(), request.getUnit().getUnitName(), request.getSubjectName())) {
-            Query query = new Query(Criteria.where("unitName").is(request.getUnit().getUnitName()));
-            mongoTemplate.remove(query, Unit.class, request.getSubjectName());
+    public boolean deleteHeadUnit(Unit unit, String dbName, String subjectName) {
+        MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbName);
+        if (headUnitExist(dbName, unit.getUnitName(), subjectName)) {
+            Query query = new Query(Criteria.where("unitName").is(unit.getUnitName()));
+            mongoTemplate.remove(query, Unit.class, subjectName);
             System.out.println("✅ Head unit deleted successfully.");
             return true;
         }
@@ -67,12 +63,12 @@ public class UnitService {
         return false;
     }
 
-    public boolean updateHeadUnitName(WrapperUnitRequest request, String newUnitName) {
-        MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, request.getDbname());
-        if (headUnitExist(request.getDbname(), request.getUnit().getUnitName(), request.getSubjectName())) {
-            Query query = new Query(Criteria.where("unitName").is(request.getUnit().getUnitName()));
+    public boolean updateHeadUnitName(Unit unit, String newUnitName, String dbName, String subjectName) {
+        MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbName);
+        if (headUnitExist(dbName, unit.getUnitName(), subjectName)) {
+            Query query = new Query(Criteria.where("unitName").is(unit.getUnitName()));
             Update update = new Update().set("unitName", newUnitName);
-            mongoTemplate.updateFirst(query, update, Unit.class, request.getSubjectName());
+            mongoTemplate.updateFirst(query, update, Unit.class, subjectName);
             System.out.println("✅ Head unit name updated to: " + newUnitName);
             return true;
         }
@@ -256,19 +252,6 @@ public class UnitService {
     /* ---------------------------------------------------------
      *  HELPERS
      * --------------------------------------------------------- */
-
-    private Unit convertToUnit(UnitRequest req) {
-        Unit unit = new Unit();
-        unit.setUnitName(req.getUnitName());
-        unit.setExplanation(req.getExplanation());
-        unit.setParentId(req.getParentId());
-        unit.setAudioFileId(defaultList(req.getAudioFileId()));
-        unit.setImageUrls(defaultList(req.getImageUrls()));
-        unit.setAiVideoUrl(defaultList(req.getAiVideoUrl()));
-        unit.setUnits(req.getUnits() != null ? req.getUnits() : new ArrayList<>());
-        unit.setTest(req.getTest() != null ? req.getTest() : new ArrayList<>());
-        return unit;
-    }
 
     private List<String> defaultList(List<String> list) {
         return list != null ? list : new ArrayList<>();
