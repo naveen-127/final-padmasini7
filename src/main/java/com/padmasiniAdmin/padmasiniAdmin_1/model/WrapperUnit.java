@@ -6,9 +6,6 @@ import jakarta.validation.constraints.NotBlank;
 
 public class WrapperUnit {
 
-    // Some requests might send "unit" property which represents parentId
-    private String unit;
-
     @NotBlank(message = "Parent ID is required")
     private String parentId;
 
@@ -26,25 +23,18 @@ public class WrapperUnit {
 
     private String subjectName;
 
-    // Audio files (array of string URLs)
+    // ✅ Audio files
     private List<String> audioFileId;
 
-    // Images
+    // ✅ Images
     private List<String> imageUrls;
 
-    // AI Video url (single)
+    // ✅ AI Video
     private String aiVideoUrl;
 
     private List<MCQTest> test;
 
     // ----- Getters & Setters -----
-    public String getUnit() {
-        return unit;
-    }
-    public void setUnit(String unit) {
-        this.unit = unit;
-    }
-
     public List<String> getKeepAudioFileIds() {
         return keepAudioFileIds;
     }
@@ -81,10 +71,6 @@ public class WrapperUnit {
     }
 
     public String getParentId() {
-        // fallback: if parentId not set but "unit" is provided, return unit
-        if ((parentId == null || parentId.isEmpty()) && unit != null && !unit.isEmpty()) {
-            return unit;
-        }
         return parentId;
     }
     public void setParentId(String parentId) {
