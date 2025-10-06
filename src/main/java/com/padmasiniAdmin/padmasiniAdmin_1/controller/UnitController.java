@@ -1,82 +1,50 @@
-package com.padmasiniAdmin.padmasiniAdmin_1.controller;
+package com.padmasiniAdmin.padmasiniAdmin_1.model;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import jakarta.validation.constraints.NotBlank;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+public class WrapperUnit {
 
-import com.padmasiniAdmin.padmasiniAdmin_1.model.Unit;
-import com.padmasiniAdmin.padmasiniAdmin_1.model.WrapperUnit;
-import com.padmasiniAdmin.padmasiniAdmin_1.service.UnitService;
+    private Unit unit;  // ✅ changed from String to Unit
 
-@RestController
-@RequestMapping("/unit")
-public class UnitController {
+    @NotBlank(message = "Parent ID is required")
+    private String parentId;
 
-    @Autowired
-    private UnitService unitService;
+    @NotBlank(message = "Standard is required")
+    private String standard;
 
-    /* ---------------------------------------------------------
-     *  HEAD-UNIT ENDPOINTS
-     * --------------------------------------------------------- */
+    private List<String> keepAudioFileIds;
+    private String dbname;
+    private String rootUnitId;
 
-    @GetMapping("/getAllUnits/{dbname}/{subjectName}/{standard}")
-    public List<Unit> getUnitsBySubject(@PathVariable String dbname,
-                                        @PathVariable String subjectName,
-                                        @PathVariable String standard) {
-        return unitService.getAllUnit(dbname, subjectName, standard);
+    private String subjectName;
+
+    // --- Getters & Setters ---
+    public Unit getUnit() { return unit; }
+    public void setUnit(Unit unit) { this.unit = unit; }
+
+    public List<String> getKeepAudioFileIds() { return keepAudioFileIds; }
+    public void setKeepAudioFileIds(List<String> keepAudioFileIds) { this.keepAudioFileIds = keepAudioFileIds; }
+
+    public String getDbname() { return dbname; }
+    public void setDbname(String dbname) { this.dbname = dbname; }
+
+    public String getRootUnitId() { return rootUnitId; }
+    public void setRootUnitId(String rootUnitId) { this.rootUnitId = rootUnitId; }
+
+    public String getSubjectName() { return subjectName; }
+    public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
+
+    public String getParentId() {
+        if ((parentId == null || parentId.isEmpty()) && unit != null) {
+            return unit.getId();  // ✅ fallback to unit's ID
+        }
+        return parentId;
     }
+    public void setParentId(String parentId) { this.parentId = parentId; }
 
-    @PostMapping("/addHeadUnit")
-    public ResponseEntity<Map<String, String>> addHeadUnit(@RequestBody WrapperUnit request) {
-        Map<String, String> response = new HashMap<>();
-        Unit unit = request.getUnit();  // ✅ pass the actual Unit
-        boolean success = unitService.addNewHeadUnit(unit, request.getDbname(), request.getSubjectName());
-        response.put("status", success ? "pass" : "failed");
-        return ResponseEntity.ok(response);
-    }
-
-    @PutMapping("/updateHeadUnit")
-    public ResponseEntity<Map<String, String>> updateHeadUnit(@RequestBody WrapperUnit request,
-                                                              @RequestParam String newUnitName) {
-        Map<String, String> response = new HashMap<>();
-        Unit unit = request.getUnit();  // ✅ pass the actual Unit
-        boolean success = unitService.updateHeadUnitName(unit, newUnitName, request.getDbname(), request.getSubjectName());
-        response.put("status", success ? "pass" : "failed");
-        return ResponseEntity.ok(response);
-    }
-
-    @DeleteMapping("/deleteHeadUnit")
-    public ResponseEntity<Map<String, String>> deleteHeadUnit(@RequestBody WrapperUnit request) {
-        Map<String, String> response = new HashMap<>();
-        Unit unit = request.getUnit();  // ✅ pass the actual Unit
-        boolean success = unitService.deleteHeadUnit(unit, request.getDbname(), request.getSubjectName());
-        response.put("status", success ? "pass" : "failed");
-        return ResponseEntity.ok(response);
-    }
-
-    /* ---------------------------------------------------------
-     *  SUB-UNIT ENDPOINTS
-     * --------------------------------------------------------- */
-
-    @DeleteMapping("/deleteUnit")
-    public ResponseEntity<Map<String, String>> deleteUnit(@RequestBody WrapperUnit request) {
-        unitService.deleteUnit(request);
-        return ResponseEntity.ok(Map.of("status", "deleted"));
-    }
-
-    @PostMapping("/updateSubUnit")
-    public ResponseEntity<Map<String, String>> updateSubUnit(@RequestBody WrapperUnit request) {
-        unitService.updateUnit(request);
-        return ResponseEntity.ok(Map.of("status", "updated"));
-    }
-
-    @PostMapping("/addSubUnit")
-    public ResponseEntity<Map<String, String>> addSubUnit(@RequestBody WrapperUnit request) {
-        unitService.addUnit(request);
-        return ResponseEntity.ok(Map.of("status", "success"));
+    @Override
+    public String toString() {
+        return "WrapperUnit [parentId=" + parentId + ", unit=" + unit + "]";
     }
 }
