@@ -46,7 +46,7 @@ public class UnitService {
     }
 
     // =============================
-    // 🔹 Head Unit Operations
+    // 🔹 Head Unit CRUD
     // =============================
     public boolean addNewHeadUnit(WrapperUnitRequest request) {
         if (!headUnitExist(request.getDbname(), request.getUnit().getUnitName(), request.getSubjectName())) {
@@ -91,9 +91,16 @@ public class UnitService {
     }
 
     // =============================
-    // 🔹 Subunit CRUD
+    // 🔹 Add Unit (with Debuggers)
     // =============================
     public void addUnit(WrapperUnit data) {
+        System.out.println("📥 Received addUnit request");
+        System.out.println("🧩 RootUnitId: " + data.getRootUnitId());
+        System.out.println("🧩 ParentId: " + data.getParentId());
+        System.out.println("🧩 UnitName: " + data.getUnitName());
+        System.out.println("🖼 Received imageUrls: " + data.getImageUrls());
+        System.out.println("🎧 Received audioFileId: " + data.getAudioFileId());
+
         UnitRequest root = getById(data.getRootUnitId(), data.getSubjectName(), data.getDbname());
         if (root == null) {
             System.out.println("❌ Root unit not found");
@@ -107,6 +114,8 @@ public class UnitService {
         unit.setExplanation(data.getExplanation());
         unit.setAudioFileId(data.getAudioFileId() != null ? data.getAudioFileId() : new ArrayList<>());
         unit.setImageUrls(data.getImageUrls() != null ? data.getImageUrls() : new ArrayList<>());
+
+        System.out.println("✅ Processed imageUrls for saving: " + unit.getImageUrls());
 
         boolean inserted = false;
 
@@ -131,7 +140,13 @@ public class UnitService {
         }
     }
 
+    // =============================
+    // 🔹 Update Unit
+    // =============================
     public void updateUnit(WrapperUnit data) {
+        System.out.println("✏️ Received updateUnit request for: " + data.getUnitName());
+        System.out.println("🖼 Updating imageUrls: " + data.getImageUrls());
+
         UnitRequest root = getById(data.getRootUnitId(), data.getSubjectName(), data.getDbname());
         if (root == null) {
             System.out.println("❌ Root unit not found");
@@ -142,7 +157,6 @@ public class UnitService {
 
         if (root.getId().equals(data.getParentId())) {
             root.setUnitName(data.getUnitName());
-            // root.setExplanation(data.getExplanation());
             updated = true;
         } else if (root.getUnits() != null) {
             for (Unit unit : root.getUnits()) {
@@ -156,13 +170,18 @@ public class UnitService {
         if (updated) {
             MongoTemplate mongoTemplate = getTemplate(data.getDbname());
             mongoTemplate.save(root, data.getSubjectName());
-            System.out.println("✏️ Unit updated successfully");
+            System.out.println("✅ Unit updated successfully with new imageUrls");
         } else {
             System.out.println("⚠️ Parent ID not found");
         }
     }
 
+    // =============================
+    // 🔹 Delete Unit
+    // =============================
     public void deleteUnit(WrapperUnit data) {
+        System.out.println("🗑️ Deleting unit with ID: " + data.getParentId());
+
         UnitRequest root = getById(data.getRootUnitId(), data.getSubjectName(), data.getDbname());
         if (root == null) {
             System.out.println("❌ Root unit not found");
@@ -177,7 +196,6 @@ public class UnitService {
                     deleteAllFiles(u);
                 }
             }
-
             MongoTemplate mongoTemplate = getTemplate(data.getDbname());
             mongoTemplate.remove(Query.query(Criteria.where("_id").is(root.getId())),
                     UnitRequest.class, data.getSubjectName());
@@ -212,6 +230,8 @@ public class UnitService {
     // =============================
     private boolean insertIntoParent(Unit current, String targetParentId, Unit newUnit) {
         if (targetParentId.equals(current.getId())) {
+            System.out.println("📦 Inserting new subunit under: " + current.getUnitName());
+            System.out.println("🖼 Image URLs for new subunit: " + newUnit.getImageUrls());
             current.getUnits().add(newUnit);
             return true;
         }
@@ -229,6 +249,7 @@ public class UnitService {
             current.setExplanation(data.getExplanation());
             current.setAudioFileId(data.getAudioFileId() != null ? data.getAudioFileId() : new ArrayList<>());
             current.setImageUrls(data.getImageUrls() != null ? data.getImageUrls() : new ArrayList<>());
+            System.out.println("✅ Updated unit " + current.getUnitName() + " with imageUrls: " + data.getImageUrls());
             return true;
         }
 
