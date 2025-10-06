@@ -12,8 +12,8 @@ public class Unit {
     private String parentId;   // links back to parent
     private String explanation;
 
-    private List<String> audioFileId = new ArrayList<>();
-    private List<String> imageUrls = new ArrayList<>();
+    private List<String> audioFileId;
+    private List<String> imageUrls;
 
     private List<Unit> units = new ArrayList<>();        // subtopics
     private List<MotherMCQTest> test = new ArrayList<>(); // optional tests
@@ -24,7 +24,7 @@ public class Unit {
 
     public Unit(boolean withTest) {
         this();
-        this.test = withTest ? new ArrayList<>() : new ArrayList<>();
+        this.test = withTest ? new ArrayList<>() : null;
     }
 
     public String getId() { return id; }
@@ -40,14 +40,10 @@ public class Unit {
     public void setExplanation(String explanation) { this.explanation = explanation; }
 
     public List<String> getAudioFileId() { return audioFileId; }
-    public void setAudioFileId(List<String> audioFileId) {
-        this.audioFileId = (audioFileId == null) ? new ArrayList<>() : audioFileId;
-    }
+    public void setAudioFileId(List<String> audioFileId) { this.audioFileId = audioFileId; }
 
     public List<String> getImageUrls() { return imageUrls; }
-    public void setImageUrls(List<String> imageUrls) {
-        this.imageUrls = (imageUrls == null) ? new ArrayList<>() : imageUrls;
-    }
+    public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
 
     public List<Unit> getUnits() { return units; }
     public void setUnits(List<Unit> units) { this.units = units; }
