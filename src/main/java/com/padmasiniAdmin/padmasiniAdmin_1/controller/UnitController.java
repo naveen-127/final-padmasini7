@@ -33,7 +33,7 @@ public class UnitController {
     @PostMapping("/addHeadUnit")
     public ResponseEntity<Map<String, String>> addHeadUnit(@RequestBody WrapperUnit request) {
         Map<String, String> response = new HashMap<>();
-        Unit unit = request.getUnit();
+        Unit unit = request.getUnit();  // ✅ pass the actual Unit
         boolean success = unitService.addNewHeadUnit(unit, request.getDbname(), request.getSubjectName());
         response.put("status", success ? "pass" : "failed");
         return ResponseEntity.ok(response);
@@ -43,7 +43,7 @@ public class UnitController {
     public ResponseEntity<Map<String, String>> updateHeadUnit(@RequestBody WrapperUnit request,
                                                               @RequestParam String newUnitName) {
         Map<String, String> response = new HashMap<>();
-        Unit unit = request.getUnit();
+        Unit unit = request.getUnit();  // ✅ pass the actual Unit
         boolean success = unitService.updateHeadUnitName(unit, newUnitName, request.getDbname(), request.getSubjectName());
         response.put("status", success ? "pass" : "failed");
         return ResponseEntity.ok(response);
@@ -52,7 +52,7 @@ public class UnitController {
     @DeleteMapping("/deleteHeadUnit")
     public ResponseEntity<Map<String, String>> deleteHeadUnit(@RequestBody WrapperUnit request) {
         Map<String, String> response = new HashMap<>();
-        Unit unit = request.getUnit();
+        Unit unit = request.getUnit();  // ✅ pass the actual Unit
         boolean success = unitService.deleteHeadUnit(unit, request.getDbname(), request.getSubjectName());
         response.put("status", success ? "pass" : "failed");
         return ResponseEntity.ok(response);
