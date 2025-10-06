@@ -5,14 +5,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import com.mongodb.client.MongoClient;
 import com.padmasiniAdmin.padmasiniAdmin_1.model.Unit;
 import com.padmasiniAdmin.padmasiniAdmin_1.model.UnitRequest;
 import com.padmasiniAdmin.padmasiniAdmin_1.model.WrapperUnit;
-import com.padmasiniAdmin.padmasiniAdmin_1.model.WrapperUnitRequest;
 
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -33,65 +31,14 @@ public class UnitService {
     private final String bucketName = "trilokinnovations-test-admin";
 
     // =============================
-    // 🔹 Mongo Helper
+    // 🔹 MongoDB Helper
     // =============================
     private MongoTemplate getTemplate(String dbName) {
         return new MongoTemplate(mongoClient, dbName);
     }
 
-    private boolean headUnitExist(String dbName, String name, String collectionName) {
-        MongoTemplate mongoTemplate = getTemplate(dbName);
-        Query query = new Query(Criteria.where("unitName").is(name));
-        return mongoTemplate.exists(query, UnitRequest.class, collectionName);
-    }
-
     // =============================
-    // 🔹 Head Unit CRUD
-    // =============================
-    public boolean addNewHeadUnit(WrapperUnitRequest request) {
-        if (!headUnitExist(request.getDbname(), request.getUnit().getUnitName(), request.getSubjectName())) {
-            MongoTemplate mongoTemplate = getTemplate(request.getDbname());
-            mongoTemplate.save(request.getUnit(), request.getSubjectName());
-            System.out.println("✅ Head unit saved");
-            return true;
-        }
-        System.out.println("⚠️ Head unit already exists");
-        return false;
-    }
-
-    public boolean deleteHeadUnit(WrapperUnitRequest request) {
-        if (headUnitExist(request.getDbname(), request.getUnit().getUnitName(), request.getSubjectName())) {
-            MongoTemplate mongoTemplate = getTemplate(request.getDbname());
-            Query query = new Query(Criteria.where("unitName").is(request.getUnit().getUnitName()));
-            mongoTemplate.remove(query, UnitRequest.class, request.getSubjectName());
-            System.out.println("🗑️ Head unit deleted");
-            return true;
-        }
-        System.out.println("⚠️ Head unit not found");
-        return false;
-    }
-
-    public boolean updateHeadUnitName(WrapperUnitRequest request, String newUnitName) {
-        if (headUnitExist(request.getDbname(), request.getUnit().getUnitName(), request.getSubjectName())) {
-            MongoTemplate mongoTemplate = getTemplate(request.getDbname());
-            Query query = new Query(Criteria.where("unitName").is(request.getUnit().getUnitName()));
-            Update update = new Update().set("unitName", newUnitName);
-            mongoTemplate.updateFirst(query, update, UnitRequest.class, request.getSubjectName());
-            System.out.println("✏️ Head unit renamed");
-            return true;
-        }
-        System.out.println("❌ Head unit not found");
-        return false;
-    }
-
-    public List<UnitRequest> getAllUnit(String dbName, String subjectName, String standard) {
-        MongoTemplate mongoTemplate = getTemplate(dbName);
-        Query query = new Query(Criteria.where("standard").is(standard));
-        return mongoTemplate.find(query, UnitRequest.class, subjectName);
-    }
-
-    // =============================
-    // 🔹 Add Unit (with Debuggers)
+    // 🔹 Add Unit (with S3 URL handling)
     // =============================
     public void addUnit(WrapperUnit data) {
         System.out.println("📥 Received addUnit request");
@@ -100,6 +47,7 @@ public class UnitService {
         System.out.println("🧩 UnitName: " + data.getUnitName());
         System.out.println("🖼 Received imageUrls: " + data.getImageUrls());
         System.out.println("🎧 Received audioFileId: " + data.getAudioFileId());
+        System.out.println("📹 Received aiVideoUrl: " + data.getAiVideoUrl());
 
         UnitRequest root = getById(data.getRootUnitId(), data.getSubjectName(), data.getDbname());
         if (root == null) {
@@ -112,10 +60,13 @@ public class UnitService {
         unit.setParentId(data.getParentId());
         unit.setUnitName(data.getUnitName());
         unit.setExplanation(data.getExplanation());
+
+        // ✅ Ensure non-null lists
         unit.setAudioFileId(data.getAudioFileId() != null ? data.getAudioFileId() : new ArrayList<>());
         unit.setImageUrls(data.getImageUrls() != null ? data.getImageUrls() : new ArrayList<>());
+        unit.setAiVideoUrl(data.getAiVideoUrl() != null ? data.getAiVideoUrl() : "");
 
-        System.out.println("✅ Processed imageUrls for saving: " + unit.getImageUrls());
+        System.out.println("✅ Processed unit for saving: " + unit);
 
         boolean inserted = false;
 
@@ -157,7 +108,12 @@ public class UnitService {
 
         if (root.getId().equals(data.getParentId())) {
             root.setUnitName(data.getUnitName());
+            root.setExplanation(data.getExplanation());
+            root.setAudioFileId(data.getAudioFileId() != null ? data.getAudioFileId() : new ArrayList<>());
+            root.setImageUrls(data.getImageUrls() != null ? data.getImageUrls() : new ArrayList<>());
+            root.setAiVideoUrl(data.getAiVideoUrl() != null ? data.getAiVideoUrl() : "");
             updated = true;
+            System.out.println("✅ Root unit updated with new media URLs");
         } else if (root.getUnits() != null) {
             for (Unit unit : root.getUnits()) {
                 if (updateParent(unit, data.getParentId(), data)) {
@@ -170,7 +126,7 @@ public class UnitService {
         if (updated) {
             MongoTemplate mongoTemplate = getTemplate(data.getDbname());
             mongoTemplate.save(root, data.getSubjectName());
-            System.out.println("✅ Unit updated successfully with new imageUrls");
+            System.out.println("✅ Unit updated successfully with new imageUrls/audio/video");
         } else {
             System.out.println("⚠️ Parent ID not found");
         }
@@ -230,9 +186,9 @@ public class UnitService {
     // =============================
     private boolean insertIntoParent(Unit current, String targetParentId, Unit newUnit) {
         if (targetParentId.equals(current.getId())) {
-            System.out.println("📦 Inserting new subunit under: " + current.getUnitName());
-            System.out.println("🖼 Image URLs for new subunit: " + newUnit.getImageUrls());
             current.getUnits().add(newUnit);
+            System.out.println("📦 Inserted subunit under: " + current.getUnitName());
+            System.out.println("🖼 Subunit image URLs: " + newUnit.getImageUrls());
             return true;
         }
         if (current.getUnits() != null) {
@@ -249,10 +205,10 @@ public class UnitService {
             current.setExplanation(data.getExplanation());
             current.setAudioFileId(data.getAudioFileId() != null ? data.getAudioFileId() : new ArrayList<>());
             current.setImageUrls(data.getImageUrls() != null ? data.getImageUrls() : new ArrayList<>());
-            System.out.println("✅ Updated unit " + current.getUnitName() + " with imageUrls: " + data.getImageUrls());
+            current.setAiVideoUrl(data.getAiVideoUrl() != null ? data.getAiVideoUrl() : "");
+            System.out.println("✅ Updated unit " + current.getUnitName() + " with media URLs: " + current.getImageUrls());
             return true;
         }
-
         if (current.getUnits() != null) {
             for (Unit child : current.getUnits()) {
                 if (updateParent(child, targetParentId, data)) return true;
@@ -265,7 +221,6 @@ public class UnitService {
         if (current.getUnits() != null) {
             boolean removed = removeUnitById(current.getUnits(), targetId);
             if (removed) return true;
-
             for (Unit child : current.getUnits()) {
                 if (deleteFromSubUnits(child, targetId)) return true;
             }
@@ -287,13 +242,10 @@ public class UnitService {
     }
 
     // =============================
-    // 🔹 File Management (S3)
+    // 🔹 S3 File Management
     // =============================
     private void deleteFileFromS3(String fileUrl) {
-        if (fileUrl == null || !fileUrl.contains(".amazonaws.com/")) {
-            System.err.println("⚠️ Invalid S3 URL: " + fileUrl);
-            return;
-        }
+        if (fileUrl == null || !fileUrl.contains(".amazonaws.com/")) return;
 
         String fileKey = fileUrl.split(".amazonaws.com/")[1];
         try (S3Client s3 = S3Client.builder()
@@ -313,19 +265,13 @@ public class UnitService {
 
     private void deleteAllFiles(Unit unit) {
         if (unit.getAudioFileId() != null) {
-            for (String audioUrl : unit.getAudioFileId()) {
-                deleteFileFromS3(audioUrl);
-            }
+            for (String audioUrl : unit.getAudioFileId()) deleteFileFromS3(audioUrl);
         }
         if (unit.getImageUrls() != null) {
-            for (String imageUrl : unit.getImageUrls()) {
-                deleteFileFromS3(imageUrl);
-            }
+            for (String imageUrl : unit.getImageUrls()) deleteFileFromS3(imageUrl);
         }
         if (unit.getUnits() != null) {
-            for (Unit sub : unit.getUnits()) {
-                deleteAllFiles(sub);
-            }
+            for (Unit sub : unit.getUnits()) deleteAllFiles(sub);
         }
     }
 
