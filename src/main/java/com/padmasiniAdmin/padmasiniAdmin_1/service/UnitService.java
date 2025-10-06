@@ -146,7 +146,7 @@ public class UnitService {
 
         if (root.getId().equals(data.getParentId())) {
             root.setUnitName(data.getUnitName());
-            root.setExplanation(data.getExplanation());
+            // root.setExplanation(data.getExplanation());
             updated = true;
         } else if (root.getUnits() != null) {
             for (Unit unit : root.getUnits()) {
