@@ -2,7 +2,6 @@ package com.padmasiniAdmin.padmasiniAdmin_1.model;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.bson.types.ObjectId;
 
 public class Unit {
@@ -14,9 +13,10 @@ public class Unit {
 
     private List<String> audioFileId = new ArrayList<>();
     private List<String> imageUrls = new ArrayList<>();
+    private List<String> aiVideoUrl = new ArrayList<>();   // ✅ NEW — AI Video URLs
 
-    private List<Unit> units = new ArrayList<>();        // subtopics
-    private List<MotherMCQTest> test = new ArrayList<>(); // optional tests
+    private List<Unit> units = new ArrayList<>();          // subtopics
+    private List<MotherMCQTest> test = new ArrayList<>();  // optional tests
 
     public Unit() {
         this.id = new ObjectId().toHexString();
@@ -27,6 +27,7 @@ public class Unit {
         this.test = withTest ? new ArrayList<>() : new ArrayList<>();
     }
 
+    // --- Getters & Setters ---
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
@@ -49,6 +50,11 @@ public class Unit {
         this.imageUrls = (imageUrls == null) ? new ArrayList<>() : imageUrls;
     }
 
+    public List<String> getAiVideoUrl() { return aiVideoUrl; }
+    public void setAiVideoUrl(List<String> aiVideoUrl) {
+        this.aiVideoUrl = (aiVideoUrl == null) ? new ArrayList<>() : aiVideoUrl;
+    }
+
     public List<Unit> getUnits() { return units; }
     public void setUnits(List<Unit> units) { this.units = units; }
 
@@ -60,6 +66,7 @@ public class Unit {
         return "Unit [id=" + id +
                 ", name=" + unitName +
                 ", parentId=" + parentId +
+                ", aiVideoUrlCount=" + (aiVideoUrl != null ? aiVideoUrl.size() : 0) +
                 ", subUnits=" + (units != null ? units.size() : 0) + "]";
     }
 }
