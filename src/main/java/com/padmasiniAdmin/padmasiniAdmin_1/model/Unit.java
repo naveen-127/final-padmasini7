@@ -8,65 +8,114 @@ public class Unit {
 
     private String id;
     private String unitName;
-    private String parentId;   // links back to parent
+    private String parentId;   // Links back to parent
     private String explanation;
 
     private List<String> audioFileId = new ArrayList<>();
     private List<String> imageUrls = new ArrayList<>();
-    private List<String> aiVideoUrl = new ArrayList<>();   // ✅ NEW — AI Video URLs
+    private List<String> aiVideoUrl = new ArrayList<>();   // ✅ AI Video URLs list
 
-    private List<Unit> units = new ArrayList<>();          // subtopics
-    private List<MotherMCQTest> test = new ArrayList<>();  // optional tests
+    private List<Unit> units = new ArrayList<>();          // Subtopics
+    private List<MotherMCQTest> test = new ArrayList<>();  // Optional tests
 
+    // --- Constructors ---
     public Unit() {
         this.id = new ObjectId().toHexString();
     }
 
     public Unit(boolean withTest) {
         this();
-        this.test = withTest ? new ArrayList<>() : new ArrayList<>();
+        if (withTest) {
+            this.test = new ArrayList<>();
+        }
     }
 
     // --- Getters & Setters ---
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public String getId() {
+        return id;
+    }
 
-    public String getUnitName() { return unitName; }
-    public void setUnitName(String unitName) { this.unitName = unitName; }
+    public void setId(String id) {
+        this.id = id;
+    }
 
-    public String getParentId() { return parentId; }
-    public void setParentId(String parentId) { this.parentId = parentId; }
+    public String getUnitName() {
+        return unitName;
+    }
 
-    public String getExplanation() { return explanation; }
-    public void setExplanation(String explanation) { this.explanation = explanation; }
+    public void setUnitName(String unitName) {
+        this.unitName = unitName;
+    }
 
-    public List<String> getAudioFileId() { return audioFileId; }
+    public String getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(String parentId) {
+        this.parentId = parentId;
+    }
+
+    public String getExplanation() {
+        return explanation;
+    }
+
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
+    }
+
+    public List<String> getAudioFileId() {
+        return audioFileId;
+    }
+
     public void setAudioFileId(List<String> audioFileId) {
-        this.audioFileId = (audioFileId == null) ? new ArrayList<>() : audioFileId;
+        this.audioFileId = (audioFileId != null) ? audioFileId : new ArrayList<>();
     }
 
-    public List<String> getImageUrls() { return imageUrls; }
+    public List<String> getImageUrls() {
+        return imageUrls;
+    }
+
     public void setImageUrls(List<String> imageUrls) {
-        this.imageUrls = (imageUrls == null) ? new ArrayList<>() : imageUrls;
+        this.imageUrls = (imageUrls != null) ? imageUrls : new ArrayList<>();
     }
 
-    public List<String> getAiVideoUrl() { return aiVideoUrl; }
+    public List<String> getAiVideoUrl() {
+        return aiVideoUrl;
+    }
+
     public void setAiVideoUrl(List<String> aiVideoUrl) {
-        this.aiVideoUrl = (aiVideoUrl == null) ? new ArrayList<>() : aiVideoUrl;
+        this.aiVideoUrl = (aiVideoUrl != null) ? aiVideoUrl : new ArrayList<>();
     }
 
-    public List<Unit> getUnits() { return units; }
-    public void setUnits(List<Unit> units) { this.units = units; }
+    public List<Unit> getUnits() {
+        return units;
+    }
 
-    public List<MotherMCQTest> getTest() { return test; }
-    public void setTest(List<MotherMCQTest> test) { this.test = test; }
+    public void setUnits(List<Unit> units) {
+        this.units = (units != null) ? units : new ArrayList<>();
+    }
 
+    public List<MotherMCQTest> getTest() {
+        return test;
+    }
+
+    public void setTest(List<MotherMCQTest> test) {
+        this.test = (test != null) ? test : new ArrayList<>();
+    }
+
+    // --- toString() for debugging ---
     @Override
     public String toString() {
-        return "Unit [id=" + id +
-                ", name=" + unitName +
-                ", parentId=" + parentId +
-                ", aiVideoUrlCount=" + (aiVideoUrl != null ? aiVideoUrl.size() : 0) +
-                ", subUnits=" + (units != null ? units.size() : 0) + "]";
+        return "Unit {" +
+                "id='" + id + '\'' +
+                ", unitName='" + unitName + '\'' +
+                ", parentId='" + parentId + '\'' +
+                ", explanation='" + (explanation != null ? explanation.substring(0, Math.min(30, explanation.length())) + "..." : null) + '\'' +
+                ", audioFiles=" + (audioFileId != null ? audioFileId.size() : 0) +
+                ", images=" + (imageUrls != null ? imageUrls.size() : 0) +
+                ", aiVideos=" + (aiVideoUrl != null ? aiVideoUrl.size() : 0) +
+                ", subUnits=" + (units != null ? units.size() : 0) +
+                ", tests=" + (test != null ? test.size() : 0) +
+                '}';
     }
 }
