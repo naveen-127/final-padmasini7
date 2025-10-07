@@ -37,58 +37,58 @@ public class SignINController {
 		return map;
 	}
 @PostMapping("/signIn")
-public ResponseEntity<?> signIn(@RequestBody UserDetails user,HttpSession session,HttpServletResponse response ){
-	System.out.println("checking password");
-	Map<String, String> map=new HashMap<String, String>();
-	UserModel checkUser1=signInService.checkUserName(user.getUserName(),user.getPassword());
-	UserModel checkUser2=signInService.checkUserGmail(user.getUserName(),user.getPassword());
-	if(checkUser1==null&&checkUser2==null) {
-		 map.put("status", "failed");
-	}
-	else if(checkUser1!=null||checkUser2!=null) {
-		UserModel userr;
-		if (checkUser1==null)
-			userr = checkUser2;
-		else
-			userr = checkUser1;
-		map.put("userName", userr.getUserName());
-		map.put("userGmail", userr.getGmail());
-		map.put("phoneNumber",userr.getPhoneNumber());
-		map.put("role",userr.getRole() );
-		map.put("coursetype", userr.getCoursetype());
-		map.put("courseName", userr.getCourseName());
-		session.setAttribute("user",userr.getUserName());
-		session.setAttribute("phoneNumber", userr.getPhoneNumber());
-		session.setAttribute("gmail", userr.getGmail());
-		session.setAttribute("role",userr.getRole());
-		session.setAttribute("coursetype", userr.getCoursetype());
-		session.setAttribute("courseName", userr.getCourseName());
-		session.setAttribute("subjects", userr.getSubjects());
-		session.setAttribute("standards", userr.getStandards());
-		Cookie cookie=new Cookie("userName", user.getUserName());
-		 cookie.setPath("/");
-         cookie.setMaxAge(60000);
-         response.addCookie(cookie);
-         map.put("status", "pass");
-         System.out.println("Session Attribute 'user': " + session.getAttribute("user"));
-	}
-	
-	 
-	    return ResponseEntity.ok(map);
-}
-@GetMapping("/logout")
-public ResponseEntity<?> logout(HttpSession session, HttpServletResponse response){
-    // Invalidate session even if no "user" attribute exists
-    session.invalidate();
-    Cookie cookie = new Cookie("user", null);
-    cookie.setMaxAge(0);
-    cookie.setPath("/");
-    response.addCookie(cookie);
+    public ResponseEntity<?> signIn(@RequestBody UserDetails user, HttpSession session, HttpServletResponse response) {
+        System.out.println("Checking password for: " + user.getUserName());
+        Map<String, String> map = new HashMap<>();
 
-    Map<String, String> map = new HashMap<>();
-    map.put("message", "Logged out successfully");
-    return ResponseEntity.ok(map);
-}
+        UserModel checkUser1 = signInService.checkUserName(user.getUserName(), user.getPassword());
+        UserModel checkUser2 = signInService.checkUserGmail(user.getUserName(), user.getPassword());
+
+        if (checkUser1 == null && checkUser2 == null) {
+            map.put("status", "failed");
+        } else {
+            UserModel userr = (checkUser1 == null) ? checkUser2 : checkUser1;
+
+            // Store user details in session
+            session.setAttribute("user", userr.getUserName());
+            session.setAttribute("phoneNumber", userr.getPhoneNumber());
+            session.setAttribute("gmail", userr.getGmail());
+            session.setAttribute("role", userr.getRole());
+            session.setAttribute("coursetype", userr.getCoursetype());
+            session.setAttribute("courseName", userr.getCourseName());
+            session.setAttribute("subjects", userr.getSubjects());
+            session.setAttribute("standards", userr.getStandards());
+
+            map.put("status", "pass");
+            map.put("userName", userr.getUserName());
+            map.put("userGmail", userr.getGmail());
+            map.put("phoneNumber", userr.getPhoneNumber());
+            map.put("role", userr.getRole());
+            map.put("coursetype", userr.getCoursetype());
+            map.put("courseName", userr.getCourseName());
+
+            System.out.println("Session created (signIn) id: " + session.getId());
+        }
+
+        return ResponseEntity.ok(map);
+    }
+
+    // Logout endpoint
+    @GetMapping("/logout")
+    public ResponseEntity<?> logout(HttpSession session, HttpServletResponse response) {
+        System.out.println("Logout called. Session id before invalidate: " + session.getId());
+        session.invalidate();
+
+        // Remove JSESSIONID cookie
+        Cookie cookie = new Cookie("JSESSIONID", null);
+        cookie.setMaxAge(0);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+
+        Map<String, String> map = new HashMap<>();
+        map.put("message", "Logged out successfully");
+        return ResponseEntity.ok(map);
+    }
 @GetMapping("/checkSession")
 public ResponseEntity<?> checkSession(HttpSession session, HttpServletResponse response){
 	System.out.println("Session ID: " + session.getId());
