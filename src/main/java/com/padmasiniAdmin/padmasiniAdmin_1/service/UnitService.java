@@ -91,24 +91,23 @@ public class UnitService {
     }
 
     // =============================
-    // 🔹 Add Unit (with Debuggers)
+    // 🔹 Add Unit (return inserted subunit ID)
     // =============================
-    public void addUnit(WrapperUnit data) {
+    public String addUnit(WrapperUnit data) {
         System.out.println("📥 Received addUnit request");
         System.out.println("🧩 RootUnitId: " + data.getRootUnitId());
         System.out.println("🧩 ParentId: " + data.getParentId());
         System.out.println("🧩 UnitName: " + data.getUnitName());
-        System.out.println("🖼 Received imageUrls: " + data.getImageUrls());
-        System.out.println("🎧 Received audioFileId: " + data.getAudioFileId());
 
         UnitRequest root = getById(data.getRootUnitId(), data.getSubjectName(), data.getDbname());
         if (root == null) {
             System.out.println("❌ Root unit not found");
-            return;
+            return null;
         }
 
         boolean assignTest = data.getParentId().equals(data.getRootUnitId());
         Unit unit = new Unit(assignTest);
+        unit.setId(new ObjectId().toString()); // assign new ID
         unit.setParentId(data.getParentId());
         unit.setUnitName(data.getUnitName());
         unit.setExplanation(data.getExplanation());
@@ -134,9 +133,11 @@ public class UnitService {
         if (inserted) {
             MongoTemplate mongoTemplate = getTemplate(data.getDbname());
             mongoTemplate.save(root, data.getSubjectName());
-            System.out.println("✅ Unit added successfully");
+            System.out.println("✅ Unit added successfully: " + unit.getUnitName());
+            return unit.getId(); // return inserted ID
         } else {
             System.out.println("⚠️ Parent ID not found");
+            return null;
         }
     }
 
@@ -145,7 +146,6 @@ public class UnitService {
     // =============================
     public void updateUnit(WrapperUnit data) {
         System.out.println("✏️ Received updateUnit request for: " + data.getUnitName());
-        System.out.println("🖼 Updating imageUrls: " + data.getImageUrls());
 
         UnitRequest root = getById(data.getRootUnitId(), data.getSubjectName(), data.getDbname());
         if (root == null) {
@@ -197,8 +197,7 @@ public class UnitService {
                 }
             }
             MongoTemplate mongoTemplate = getTemplate(data.getDbname());
-            mongoTemplate.remove(Query.query(Criteria.where("_id").is(root.getId())),
-                    UnitRequest.class, data.getSubjectName());
+            mongoTemplate.remove(Query.query(Criteria.where("_id").is(root.getId())), UnitRequest.class, data.getSubjectName());
             System.out.println("🗑️ Root unit deleted");
             return;
         }
@@ -230,8 +229,6 @@ public class UnitService {
     // =============================
     private boolean insertIntoParent(Unit current, String targetParentId, Unit newUnit) {
         if (targetParentId.equals(current.getId())) {
-            System.out.println("📦 Inserting new subunit under: " + current.getUnitName());
-            System.out.println("🖼 Image URLs for new subunit: " + newUnit.getImageUrls());
             current.getUnits().add(newUnit);
             return true;
         }
@@ -249,7 +246,6 @@ public class UnitService {
             current.setExplanation(data.getExplanation());
             current.setAudioFileId(data.getAudioFileId() != null ? data.getAudioFileId() : new ArrayList<>());
             current.setImageUrls(data.getImageUrls() != null ? data.getImageUrls() : new ArrayList<>());
-            System.out.println("✅ Updated unit " + current.getUnitName() + " with imageUrls: " + data.getImageUrls());
             return true;
         }
 
@@ -290,10 +286,7 @@ public class UnitService {
     // 🔹 File Management (S3)
     // =============================
     private void deleteFileFromS3(String fileUrl) {
-        if (fileUrl == null || !fileUrl.contains(".amazonaws.com/")) {
-            System.err.println("⚠️ Invalid S3 URL: " + fileUrl);
-            return;
-        }
+        if (fileUrl == null || !fileUrl.contains(".amazonaws.com/")) return;
 
         String fileKey = fileUrl.split(".amazonaws.com/")[1];
         try (S3Client s3 = S3Client.builder()
@@ -305,7 +298,6 @@ public class UnitService {
                     .bucket(bucketName)
                     .key(fileKey)
                     .build());
-            System.out.println("🗑️ Deleted from S3: " + fileKey);
         } catch (Exception e) {
             System.err.println("❌ S3 delete failed: " + e.getMessage());
         }
@@ -313,19 +305,13 @@ public class UnitService {
 
     private void deleteAllFiles(Unit unit) {
         if (unit.getAudioFileId() != null) {
-            for (String audioUrl : unit.getAudioFileId()) {
-                deleteFileFromS3(audioUrl);
-            }
+            unit.getAudioFileId().forEach(this::deleteFileFromS3);
         }
         if (unit.getImageUrls() != null) {
-            for (String imageUrl : unit.getImageUrls()) {
-                deleteFileFromS3(imageUrl);
-            }
+            unit.getImageUrls().forEach(this::deleteFileFromS3);
         }
         if (unit.getUnits() != null) {
-            for (Unit sub : unit.getUnits()) {
-                deleteAllFiles(sub);
-            }
+            unit.getUnits().forEach(this::deleteAllFiles);
         }
     }
 
