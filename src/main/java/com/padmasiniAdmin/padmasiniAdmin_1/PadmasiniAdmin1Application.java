@@ -13,11 +13,17 @@ public class WebConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/") // apply to all endpoints
-                        .allowedOriginPatterns("*") // allow all origins (good for dev)
+                registry.addMapping("/")
+                        // ✅ Exact origins used for dev + Netlify frontend
+                        .allowedOrigins(
+                            "http://localhost:5173",
+                            "http://localhost:5174",
+                            "https://padmasini7-frontend.netlify.app",
+                            "https://d2kr3vc90ue6me.cloudfront.net"
+                        )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
-                        .allowCredentials(true); // allow cookies/session
+                        .allowCredentials(true); // important for session cookies
             }
         };
     }
