@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,123 +15,103 @@ import com.padmasiniAdmin.padmasiniAdmin_1.service.UnitService;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*") // Allow all frontend origins
+@CrossOrigin(origins = "*", allowCredentials = "true") // ✅ allow frontend to send requests with cookies
 public class UnitController {
 
     @Autowired
     private UnitService unitService;
 
-    // 🟩 Get all units by subject
+    // -----------------------------
+    // 🟩 Get all units
+    // -----------------------------
     @GetMapping("/getAllUnits/{dbname}/{subjectName}/{standard}")
-    public ResponseEntity<List<UnitRequest>> getUnitsBySubject(
+    public List<UnitRequest> getUnitsBySubject(
             @PathVariable String dbname,
             @PathVariable String subjectName,
             @PathVariable String standard) {
-
-        List<UnitRequest> units = unitService.getAllUnit(dbname, subjectName, standard);
-        return ResponseEntity.ok(units);
+        return unitService.getAllUnit(dbname, subjectName, standard);
     }
 
-    // 🟩 Add new head unit
+    // -----------------------------
+    // 🟩 Add head unit
+    // -----------------------------
     @PostMapping("/addNewHeadUnit")
     public ResponseEntity<Map<String, String>> addHeadUnit(@RequestBody WrapperUnitRequest request) {
-        boolean success = unitService.addNewHeadUnit(request);
-
-        return ResponseEntity.ok(Map.of(
-                "status", success ? "pass" : "failed",
-                "message", success ? "Head unit added successfully" : "Failed to add head unit"
-        ));
+        Map<String, String> response = new HashMap<>();
+        response.put("status", unitService.addNewHeadUnit(request) ? "pass" : "failed");
+        return ResponseEntity.ok(response);
     }
 
+    // -----------------------------
     // 🟩 Update head unit
+    // -----------------------------
     @PutMapping("/updateHeadUnit/{newUnitName}")
     public ResponseEntity<Map<String, String>> updateHeadUnit(
             @RequestBody WrapperUnitRequest request,
             @PathVariable String newUnitName) {
-
-        boolean success = unitService.updateHeadUnitName(request, newUnitName);
-
-        return ResponseEntity.ok(Map.of(
-                "status", success ? "pass" : "failed",
-                "message", success ? "Head unit updated successfully" : "Failed to update head unit"
-        ));
+        Map<String, String> response = new HashMap<>();
+        response.put("status", unitService.updateHeadUnitName(request, newUnitName) ? "pass" : "failed");
+        return ResponseEntity.ok(response);
     }
 
+    // -----------------------------
     // 🟩 Delete head unit
+    // -----------------------------
     @DeleteMapping("/deleteHeadUnit")
     public ResponseEntity<Map<String, String>> deleteHeadUnit(@RequestBody WrapperUnitRequest request) {
-        boolean success = unitService.deleteHeadUnit(request);
-
-        return ResponseEntity.ok(Map.of(
-                "status", success ? "pass" : "failed",
-                "message", success ? "Head unit deleted successfully" : "Failed to delete head unit"
-        ));
+        Map<String, String> response = new HashMap<>();
+        response.put("status", unitService.deleteHeadUnit(request) ? "pass" : "failed");
+        return ResponseEntity.ok(response);
     }
 
+    // -----------------------------
     // 🟩 Delete sub-unit
+    // -----------------------------
     @DeleteMapping("/deleteUnit")
     public ResponseEntity<Map<String, String>> deleteUnit(@RequestBody WrapperUnit unit) {
-        try {
-            unitService.deleteUnit(unit);
-            return ResponseEntity.ok(Map.of(
-                    "status", "deleted",
-                    "message", "Sub-unit deleted successfully"
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("status", "failed", "message", e.getMessage()));
-        }
+        unitService.deleteUnit(unit);
+        return ResponseEntity.ok(Map.of("status", "deleted"));
     }
 
-    // 🟩 Update sub-section (sub-unit)
+    // -----------------------------
+    // 🟩 Update sub-section
+    // -----------------------------
     @PostMapping("/updateSubsection")
     public ResponseEntity<Map<String, String>> updateSubUnit(@RequestBody WrapperUnit unit) {
-        try {
-            unitService.updateUnit(unit);
-            return ResponseEntity.ok(Map.of(
-                    "status", "updated",
-                    "message", "Sub-section updated successfully"
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("status", "failed", "message", e.getMessage()));
-        }
+        unitService.updateUnit(unit);
+        return ResponseEntity.ok(Map.of("status", "updated"));
     }
 
+    // -----------------------------
     // 🟩 Add new sub-section
+    // -----------------------------
     @PostMapping("/addNewSubsection")
     public ResponseEntity<Map<String, String>> addSubUnit(@RequestBody WrapperUnit unit) {
-        try {
-            unitService.addUnit(unit);
-            return ResponseEntity.ok(Map.of(
-                    "status", "success",
-                    "message", "Sub-section added successfully"
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("status", "failed", "message", e.getMessage()));
-        }
+        unitService.addUnit(unit);
+        return ResponseEntity.ok(Map.of("status", "success"));
     }
 
-    // 🟩 Add subtopic (with imageUrl from frontend)
+    // -----------------------------
+    // 🟩 Add new subtopic
+    // -----------------------------
     @PostMapping("/addSubtopic")
-    public ResponseEntity<Map<String, String>> addSubtopic(@RequestBody WrapperUnit data) {
-        try {
-            // Example frontend request:
-            // {
-            //   "dbname": "padmasini",
-            //   "unitName": "Biology Unit 1",
-            //   "subtopicName": "Cell Division",
-            //   "imageUrl": "https://s3.amazonaws.com/.../image.png"
-            // }
-            unitService.addUnit(data);
-            return ResponseEntity.ok(Map.of(
-                    "status", "success",
-                    "message", "Subtopic added successfully"
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("status", "failed", "message", e.getMessage()));
-        }
+    public ResponseEntity<Map<String, Object>> addSubtopic(@RequestBody WrapperUnit data) {
+        // Save the subtopic and return inserted ID
+        String insertedSubId = unitService.addUnit(data); // make sure this returns the ID
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("insertedSubId", insertedSubId);
+        return ResponseEntity.ok(response);
+    }
+
+    // -----------------------------
+    // 🟩 Optional: check session
+    // -----------------------------
+    @GetMapping("/checkSession")
+    public ResponseEntity<Map<String, Object>> checkSession(@SessionAttribute(name = "user", required = false) String user) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("user", user); // will be null if not logged in
+        response.put("status", user != null ? "loggedIn" : "notLoggedIn");
+        return ResponseEntity.ok(response);
     }
 }
