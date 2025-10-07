@@ -13,24 +13,24 @@ public class PadmasiniAdmin1Application {
         SpringApplication.run(PadmasiniAdmin1Application.class, args);
     }
 
-    @Bean
-    public WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")
-                        // Use allowedOriginPatterns to support wildcards with credentials
-                        .allowedOriginPatterns(
-                            "http://localhost:5173",
-                            "https://*.trilokinnovations.com",
-                            "https://padmasini7-frontend.netlify.app",
-                            "https://*.cloudfront.net"
-                        )
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                        .allowedHeaders("*")
-                        .allowCredentials(true)
-                        .maxAge(3600); // optional: cache preflight requests for 1 hour
-            }
-        };
-    }
+   @Bean
+public WebMvcConfigurer corsConfigurer() {
+    return new WebMvcConfigurer() {
+        @Override
+        public void addCorsMappings(CorsRegistry registry) {
+            registry.addMapping("/**")
+                .allowedOriginPatterns(
+                    "http://localhost:5173",
+                    "https://d2kr3vc90ue6me.cloudfront.net",
+                    "https://trilokinnovations.com",
+                    "https://www.trilokinnovations.com",
+                    "https://padmasini7-frontend.netlify.app"
+                )
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
+        }
+    };
+}
+
 }
