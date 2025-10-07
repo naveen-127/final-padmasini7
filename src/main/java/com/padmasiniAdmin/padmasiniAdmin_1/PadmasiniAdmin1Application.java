@@ -14,17 +14,23 @@ public class PadmasiniAdmin1Application {
     }
 
     @Bean
-    public WebMvcConfigurer corsConfigurer() {   
-         return new WebMvcConfigurer() {
-            @Override	
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                    .allowedOrigins("http://localhost:5173","https://d2kr3vc90ue6me.cloudfront.net","https://trilokinnovations.com","https://www.trilokinnovations.com","https://padmasini7-frontend.netlify.app", "http://localhost:5174/")
-                    .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                    .allowedHeaders("*")    
-                    .allowCredentials(true);
+                        // Use allowedOriginPatterns to support wildcards with credentials
+                        .allowedOriginPatterns(
+                            "http://localhost:5173",
+                            "https://*.trilokinnovations.com",
+                            "https://padmasini7-frontend.netlify.app",
+                            "https://*.cloudfront.net"
+                        )
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedHeaders("*")
+                        .allowCredentials(true)
+                        .maxAge(3600); // optional: cache preflight requests for 1 hour
             }
         };
     }
 }
-   
