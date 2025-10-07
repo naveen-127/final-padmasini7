@@ -78,17 +78,16 @@ public ResponseEntity<?> signIn(@RequestBody UserDetails user,HttpSession sessio
 }
 @GetMapping("/logout")
 public ResponseEntity<?> logout(HttpSession session, HttpServletResponse response){
-	System.out.println("inside logout"+session.getAttribute("userName"));
-	if(session.getAttribute("user")!=null) {
-		session.invalidate();
-		 Cookie cookie = new Cookie("user", null);
-		    cookie.setMaxAge(0); // Deletes cookie
-		    cookie.setPath("/");
-		    response.addCookie(cookie);
-		    //System.out.println("inside logout     2   "+session.getAttribute("userName"));
-		   return ResponseEntity.ok("pass");
-	}
-	return ResponseEntity.ok("failed");
+    // Invalidate session even if no "user" attribute exists
+    session.invalidate();
+    Cookie cookie = new Cookie("user", null);
+    cookie.setMaxAge(0);
+    cookie.setPath("/");
+    response.addCookie(cookie);
+
+    Map<String, String> map = new HashMap<>();
+    map.put("message", "Logged out successfully");
+    return ResponseEntity.ok(map);
 }
 @GetMapping("/checkSession")
 public ResponseEntity<?> checkSession(HttpSession session, HttpServletResponse response){
