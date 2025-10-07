@@ -14,6 +14,7 @@ import com.padmasiniAdmin.padmasiniAdmin_1.model.WrapperUnitRequest;
 import com.padmasiniAdmin.padmasiniAdmin_1.service.UnitService;
 
 @RestController
+@RequestMapping("/api") // ✅ So it matches API_BASE_URL3 = `${API_BASE_URL}/api`
 public class UnitController {
 
     @Autowired
@@ -57,15 +58,29 @@ public class UnitController {
         return ResponseEntity.ok(Map.of("status", "deleted"));
     }
 
-    @PostMapping("/updateSubsection")
-    public ResponseEntity<Map<String, String>> updateSubUnit(@RequestPart("unit") WrapperUnit unit) {
-        unitService.updateUnit(unit);
-        return ResponseEntity.ok(Map.of("status", "updated"));
+    // ✅ FIXED: Accept JSON payload from frontend
+    @PostMapping("/addSubtopic")
+    public ResponseEntity<Map<String, Object>> addSubtopic(@RequestBody WrapperUnit unit) {
+        System.out.println("📥 /addSubtopic called with payload: " + unit);
+        String insertedId = unitService.addUnit(unit);
+
+        if (insertedId != null) {
+            return ResponseEntity.ok(Map.of(
+                "status", "success",
+                "insertedSubId", insertedId
+            ));
+        } else {
+            return ResponseEntity.status(400).body(Map.of(
+                "status", "failed",
+                "message", "Parent or root unit not found"
+            ));
+        }
     }
 
-    @PostMapping("/addNewSubsection")
-    public ResponseEntity<Map<String, String>> addSubUnit(@RequestPart("unit") WrapperUnit unit) {
-        unitService.addUnit(unit);
-        return ResponseEntity.ok(Map.of("status", "success"));
+    // ✅ FIXED: Also JSON (for update)
+    @PostMapping("/updateSubsection")
+    public ResponseEntity<Map<String, String>> updateSubUnit(@RequestBody WrapperUnit unit) {
+        unitService.updateUnit(unit);
+        return ResponseEntity.ok(Map.of("status", "updated"));
     }
 }
