@@ -104,7 +104,7 @@ public class MCQTestService {
             return null;
         }
 
-        // update metadata
+        // Update metadata
         if (data.getTestName() != null && !data.getTestName().trim().isEmpty()) {
             test.setTestName(data.getTestName());
         }
@@ -113,6 +113,8 @@ public class MCQTestService {
         }
 
         boolean updated = false;
+
+        // 1️⃣ Update single question if quesId provided
         if (data.getQuesId() != null && !data.getQuesId().isEmpty()) {
             for (MCQTest q : test.getQuestionsList()) {
                 if (q.getId().equals(data.getQuesId())) {
@@ -122,14 +124,27 @@ public class MCQTestService {
                 }
             }
         }
+
+        // 2️⃣ Replace all questions if questionsList provided
+        if (!updated && data.getQuestionsList() != null && !data.getQuestionsList().isEmpty()) {
+            List<MCQTest> newQuestions = new ArrayList<>();
+            for (MCQTest q : data.getQuestionsList()) {
+                sanitizeQuestionBeforeSave(q);
+                newQuestions.add(q);
+            }
+            test.setQuestionsList(newQuestions);
+            updated = true;
+        }
+
         if (updated) {
             saveRoot(root, data);
             return root.getUnitName();
         } else {
-            System.out.println("⚠️ No question updated (quesId missing or not found)");
+            System.out.println("⚠️ No question updated (quesId missing or empty, questionsList missing)");
             return null;
         }
     }
+
 
     public String deleteQuestion(WrapperMCQTest data) {
         System.out.println("📥 deleteQuestion called");
@@ -287,4 +302,3 @@ public class MCQTestService {
         }
     }
 }
-
