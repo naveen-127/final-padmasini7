@@ -96,4 +96,19 @@ public class UnitRequest {
                 ", test=" + test +
                 '}';
     }
+
+	public void setExplanation(String explanation) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void setImageUrls(List<String> imageUrls) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void setAudioFileId(List<String> audioFileId) {
+		// TODO Auto-generated method stub
+		
+	}
 }
