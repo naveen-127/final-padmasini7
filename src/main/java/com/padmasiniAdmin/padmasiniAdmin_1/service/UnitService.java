@@ -144,19 +144,23 @@ public class UnitService {
     // =============================
     // 🔹 Update Unit
     // =============================
-    public void updateUnit(WrapperUnit data) {
+    public boolean updateUnit(WrapperUnit data) {
         System.out.println("✏️ Received updateUnit request for: " + data.getUnitName());
 
         UnitRequest root = getById(data.getRootUnitId(), data.getSubjectName(), data.getDbname());
         if (root == null) {
             System.out.println("❌ Root unit not found");
-            return;
+            return false;
         }
 
         boolean updated = false;
 
+        // If updating root itself
         if (root.getId().equals(data.getParentId())) {
             root.setUnitName(data.getUnitName());
+            root.setExplanation(data.getExplanation());
+            root.setImageUrls(data.getImageUrls());
+            root.setAudioFileId(data.getAudioFileId());
             updated = true;
         } else if (root.getUnits() != null) {
             for (Unit unit : root.getUnits()) {
@@ -170,26 +174,29 @@ public class UnitService {
         if (updated) {
             MongoTemplate mongoTemplate = getTemplate(data.getDbname());
             mongoTemplate.save(root, data.getSubjectName());
-            System.out.println("✅ Unit updated successfully with new imageUrls");
+            System.out.println("✅ Unit updated successfully with new data");
+            return true;
         } else {
             System.out.println("⚠️ Parent ID not found");
+            return false;
         }
     }
 
     // =============================
     // 🔹 Delete Unit
     // =============================
-    public void deleteUnit(WrapperUnit data) {
+    public boolean deleteUnit(WrapperUnit data) {
         System.out.println("🗑️ Deleting unit with ID: " + data.getParentId());
 
         UnitRequest root = getById(data.getRootUnitId(), data.getSubjectName(), data.getDbname());
         if (root == null) {
             System.out.println("❌ Root unit not found");
-            return;
+            return false;
         }
 
         boolean deleted = false;
 
+        // If deleting root itself
         if (root.getId().equals(data.getParentId())) {
             if (root.getUnits() != null) {
                 for (Unit u : root.getUnits()) {
@@ -199,13 +206,15 @@ public class UnitService {
             MongoTemplate mongoTemplate = getTemplate(data.getDbname());
             mongoTemplate.remove(Query.query(Criteria.where("_id").is(root.getId())), UnitRequest.class, data.getSubjectName());
             System.out.println("🗑️ Root unit deleted");
-            return;
+            return true;
         }
 
+        // Try deleting from direct children
         if (root.getUnits() != null) {
             deleted = removeUnitById(root.getUnits(), data.getParentId());
         }
 
+        // Try deleting from nested subunits
         if (!deleted && root.getUnits() != null) {
             for (Unit u : root.getUnits()) {
                 if (deleteFromSubUnits(u, data.getParentId())) {
@@ -219,10 +228,13 @@ public class UnitService {
             MongoTemplate mongoTemplate = getTemplate(data.getDbname());
             mongoTemplate.save(root, data.getSubjectName());
             System.out.println("✅ Unit deleted successfully");
+            return true;
         } else {
             System.out.println("⚠️ Parent ID not found");
+            return false;
         }
     }
+
 
     // =============================
     // 🔹 Recursive Helpers
