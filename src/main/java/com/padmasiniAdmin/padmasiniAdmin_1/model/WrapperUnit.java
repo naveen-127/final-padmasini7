@@ -91,4 +91,8 @@ public class WrapperUnit {
                 ", keepAudioFileIds=" + keepAudioFileIds +
                 ", test=" + test + "]";
     }
+	public Object getId() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
