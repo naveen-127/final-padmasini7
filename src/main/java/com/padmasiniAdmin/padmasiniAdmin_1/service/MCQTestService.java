@@ -14,6 +14,7 @@ import com.padmasiniAdmin.padmasiniAdmin_1.model.WrapperMCQTest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -91,56 +92,98 @@ public class MCQTestService {
     }
 
     public String updateQuestion(WrapperMCQTest data, String oldTestName) {
-        System.out.println("📥 updateQuestion called: oldName=" + oldTestName + " wrapper testName=" + data.getTestName());
-        UnitRequest root = getById(data.getRootId(), data.getSubjectName(), data.getDbname());
-        if (root == null) {
-            System.out.println("❌ Root not found");
+        System.out.println("🔄 UPDATE QUESTION SERVICE CALLED");
+        
+        // ✅ Add null checks
+        if (data == null) {
+            System.out.println("❌ Data is null");
+            return null;
+        }
+        
+        if (oldTestName == null || oldTestName.trim().isEmpty()) {
+            System.out.println("❌ Old test name is null or empty");
+            return null;
+        }
+        
+        System.out.println("📥 Old Test Name: " + oldTestName);
+        System.out.println("📥 New Test Name: " + data.getTestName());
+        System.out.println("📥 RootId: " + data.getRootId());
+        System.out.println("📥 ParentId: " + data.getParentId());
+        System.out.println("📥 Dbname: " + data.getDbname());
+        System.out.println("📥 SubjectName: " + data.getSubjectName());
+
+        // ✅ Check for required fields
+        if (data.getRootId() == null || data.getRootId().trim().isEmpty()) {
+            System.out.println("❌ RootId is required");
+            return null;
+        }
+        
+        if (data.getDbname() == null || data.getDbname().trim().isEmpty()) {
+            System.out.println("❌ Dbname is required");
+            return null;
+        }
+        
+        if (data.getSubjectName() == null || data.getSubjectName().trim().isEmpty()) {
+            System.out.println("❌ SubjectName is required");
             return null;
         }
 
-        MotherMCQTest test = findTestRecursive(root, data.getParentId(), oldTestName);
-        if (test == null) {
-            System.out.println("⚠️ Test not found: " + oldTestName);
-            return null;
-        }
+        try {
+            UnitRequest root = getById(data.getRootId(), data.getSubjectName(), data.getDbname());
+            if (root == null) {
+                System.out.println("❌ Root not found for rootId: " + data.getRootId());
+                return null;
+            }
 
-        // Update metadata
-        if (data.getTestName() != null && !data.getTestName().trim().isEmpty()) {
-            test.setTestName(data.getTestName());
-        }
-        if (data.getMarks() > 0) {
-            test.setMarks(data.getMarks());
-        }
+            MotherMCQTest test = findTestRecursive(root, data.getParentId(), oldTestName);
+            if (test == null) {
+                System.out.println("❌ Test not found: " + oldTestName + " in parent: " + data.getParentId());
+                return null;
+            }
 
-        boolean updated = false;
+            System.out.println("✅ Found test: " + test.getTestName());
 
-        // 1️⃣ Update single question if quesId provided
-        if (data.getQuesId() != null && !data.getQuesId().isEmpty()) {
-            for (MCQTest q : test.getQuestionsList()) {
-                if (q.getId().equals(data.getQuesId())) {
-                    updateQuestionFields(q, data);
-                    updated = true;
-                    break;
+            boolean updated = false;
+
+            // Update metadata if changed
+            if (data.getTestName() != null && !data.getTestName().trim().isEmpty() && !data.getTestName().equals(oldTestName)) {
+                test.setTestName(data.getTestName());
+                updated = true;
+                System.out.println("✏️ Updated test name");
+            }
+
+            if (data.getMarks() > 0 && data.getMarks() != test.getMarks()) {
+                test.setMarks(data.getMarks());
+                updated = true;
+                System.out.println("✏️ Updated marks");
+            }
+
+            // Replace all questions if questionsList provided
+            if (data.getQuestionsList() != null && !data.getQuestionsList().isEmpty()) {
+                List<MCQTest> newQuestions = new ArrayList<>();
+                for (MCQTest q : data.getQuestionsList()) {
+                    if (q != null) {
+                        sanitizeQuestionBeforeSave(q);
+                        newQuestions.add(q);
+                    }
                 }
+                test.setQuestionsList(newQuestions);
+                updated = true;
+                System.out.println("✅ Replaced questions list with " + newQuestions.size() + " questions");
             }
-        }
 
-        // 2️⃣ Replace all questions if questionsList provided
-        if (!updated && data.getQuestionsList() != null && !data.getQuestionsList().isEmpty()) {
-            List<MCQTest> newQuestions = new ArrayList<>();
-            for (MCQTest q : data.getQuestionsList()) {
-                sanitizeQuestionBeforeSave(q);
-                newQuestions.add(q);
+            if (updated) {
+                saveRoot(root, data);
+                System.out.println("💾 Changes saved successfully");
+                return root.getUnitName();
+            } else {
+                System.out.println("⚠️ No changes detected - nothing to update");
+                return root.getUnitName(); // Still return success if no changes
             }
-            test.setQuestionsList(newQuestions);
-            updated = true;
-        }
-
-        if (updated) {
-            saveRoot(root, data);
-            return root.getUnitName();
-        } else {
-            System.out.println("⚠️ No question updated (quesId missing or empty, questionsList missing)");
+            
+        } catch (Exception e) {
+            System.err.println("❌ EXCEPTION in updateQuestion service:");
+            e.printStackTrace();
             return null;
         }
     }
@@ -181,13 +224,48 @@ public class MCQTestService {
     }
 
     private void sanitizeQuestionBeforeSave(MCQTest q) {
-        if (q.getId() == null || q.getId().trim().isEmpty()) {
-            q.setId(new ObjectId().toHexString());
+        if (q == null) return;
+        
+        try {
+            if (q.getId() == null || q.getId().trim().isEmpty()) {
+                q.setId(new ObjectId().toHexString());
+            }
+            
+            // Safe null handling for lists
+            if (q.getQuestionImages() == null) {
+                q.setQuestionImages(new ArrayList<>());
+            }
+            if (q.getSolutionImages() == null) {
+                q.setSolutionImages(new ArrayList<>());
+            }
+            if (q.getTableData() == null) {
+                q.setTableData(new ArrayList<>());
+            }
+            
+            // Safe null handling for strings
+            if (q.getExplanation() == null) {
+                q.setExplanation("");
+            }
+            if (q.getQuestion() == null) {
+                q.setQuestion("");
+            }
+            if (q.getOption1() == null) {
+                q.setOption1("");
+            }
+            if (q.getOption2() == null) {
+                q.setOption2("");
+            }
+            if (q.getOption3() == null) {
+                q.setOption3("");
+            }
+            if (q.getOption4() == null) {
+                q.setOption4("");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error in sanitizeQuestionBeforeSave:");
+            e.printStackTrace();
         }
-        q.setQuestionImages(sanitizeList(q.getQuestionImages(), "NO_QUESTION_IMAGE"));
-        q.setSolutionImages(sanitizeList(q.getSolutionImages(), "NO_SOLUTION_IMAGE"));
-        if (q.getExplanation() == null) q.setExplanation(""); // keep explicit empty string if no solution
-        if (q.getTableData() == null) q.setTableData(new ArrayList<>());
     }
 
     private List<String> sanitizeList(List<String> input, String defaultValue) {
@@ -199,7 +277,8 @@ public class MCQTestService {
         return input;
     }
 
-    private MotherMCQTest findTestRecursive(UnitRequest root, String parentId, String testName) {
+
+    public MotherMCQTest findTestRecursive(UnitRequest root, String parentId, String testName) {
         if (root == null) return null;
         if (root.getId().equals(parentId)) {
             return root.getTest().stream()
