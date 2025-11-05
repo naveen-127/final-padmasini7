@@ -21,7 +21,7 @@ public class WebConfig implements WebMvcConfigurer {
                     "https://ai-generative-1.onrender.com",
                     "http://localhost:*", // Allow any localhost port
                     "https://*.netlify.app", // Allow all Netlify subdomains
-                    "https://www.trilokinnovations.com/"
+                    "https://www.trilokinnovations.com"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 .allowedHeaders("*")
