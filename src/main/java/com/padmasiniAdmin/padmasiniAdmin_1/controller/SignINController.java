@@ -93,32 +93,49 @@ public ResponseEntity<?> logout(HttpSession session, HttpServletResponse respons
 	return ResponseEntity.ok("failed");
 }
 @GetMapping("/checkSession")
-public ResponseEntity<?> checkSession(HttpSession session, HttpServletResponse response){
-	System.out.println("Session ID: " + session.getId());
-	System.out.println("Session Attribute 'user': " + session.getAttribute("user"));
+public ResponseEntity<?> checkSession(HttpSession session, HttpServletRequest request, HttpServletResponse response){
+    System.out.println("=== SESSION DEBUG ===");
+    System.out.println("Session ID: " + session.getId());
+    System.out.println("Session isNew: " + session.isNew());
+    System.out.println("Session Creation Time: " + session.getCreationTime());
+    System.out.println("Session Last Accessed: " + session.getLastAccessedTime());
+    System.out.println("Session Attribute 'user': " + session.getAttribute("user"));
+    
+    // Check all session attributes
+    java.util.Enumeration<String> attributeNames = session.getAttributeNames();
+    while (attributeNames.hasMoreElements()) {
+        String name = attributeNames.nextElement();
+        System.out.println("Session Attribute: " + name + " = " + session.getAttribute(name));
+    }
+    
+    // Check cookies from request
+    Cookie[] cookies = request.getCookies();
+    if (cookies != null) {
+        for (Cookie cookie : cookies) {
+            System.out.println("Cookie: " + cookie.getName() + " = " + cookie.getValue());
+        }
+    } else {
+        System.out.println("No cookies in request");
+    }
+    
+    System.out.println("=== END SESSION DEBUG ===");
 
-	Map<String, Object> map = new HashMap<>();
-	if(session.getAttribute("user")==null) {
-		System.out.println("inside checksession user null");
-		session.invalidate();
-		 Cookie cookie = new Cookie("user", null);
-		    cookie.setMaxAge(0); // Deletes cookie
-		    cookie.setPath("/");
-		    response.addCookie(cookie);
-		    map.put("status", "failed");
-	}
-	else if (session.getAttribute("user") != null) {
-	        map.put("status", "pass");
-	        map.put("userName", session.getAttribute("user"));
-	        map.put("phoneNumber",session.getAttribute("phoneNumber"));
-	        map.put("userGmail", session.getAttribute("gmail"));
-	        map.put("role", session.getAttribute("role"));
-	        map.put("coursetype", session.getAttribute("coursetype"));
-	        map.put("courseName", session.getAttribute("courseName"));
-	        //response.put("user", session.getAttribute("user"));
-	    } else {
-	        map.put("status", "failed");
-	    }
-	    return ResponseEntity.ok(map);
+    Map<String, Object> map = new HashMap<>();
+    if(session.getAttribute("user")==null) {
+        System.out.println("inside checksession user null");
+        map.put("status", "failed");
+    }
+    else if (session.getAttribute("user") != null) {
+        map.put("status", "pass");
+        map.put("userName", session.getAttribute("user"));
+        map.put("phoneNumber",session.getAttribute("phoneNumber"));
+        map.put("userGmail", session.getAttribute("gmail"));
+        map.put("role", session.getAttribute("role"));
+        map.put("coursetype", session.getAttribute("coursetype"));
+        map.put("courseName", session.getAttribute("courseName"));
+    } else {
+        map.put("status", "failed");
+    }
+    return ResponseEntity.ok(map);
 }
 }
