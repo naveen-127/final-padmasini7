@@ -25,7 +25,9 @@ public class WebConfig implements WebMvcConfigurer {
                         "http://www.trilokinnovations.com", // Add HTTP version
                         "https://trilokinnovations.com", // Add without www
                         "http://trilokinnovations.com" ,// Add HTTP without www
-                        "http://trilokinnovations.s3-website.ap-south-1.amazonaws.com"
+                        "http://trilokinnovations.s3-website.ap-south-1.amazonaws.com",
+                        "https://dafj1druksig9.cloudfront.net", // Add your actual CloudFront domain
+                        "https://*.cloudfront.net"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 .allowedHeaders("*")
