@@ -12,6 +12,7 @@ public class WebConfig implements WebMvcConfigurer {
         // Single CORS configuration for all endpoints
         registry.addMapping("/**")
                 .allowedOriginPatterns(
+                    "http://3.91.243.188:3000",
                 		"https://majestic-frangollo-031fed.netlify.app",
                         "https://classy-kulfi-cddfef.netlify.app",
                         "https://padmasini7-frontend.netlify.app",
