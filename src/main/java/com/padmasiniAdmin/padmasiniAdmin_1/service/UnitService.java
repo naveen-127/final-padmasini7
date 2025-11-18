@@ -93,48 +93,70 @@ public class UnitService {
     // =============================
     // 🔹 Add Unit (return inserted subunit ID) - FIXED for nested subtopics
     // =============================
-    public String addUnit(WrapperUnit data) {
-        System.out.println("📥 Received addUnit request");
-        System.out.println("🧩 RootUnitId: " + data.getRootId());
-        System.out.println("🧩 ParentId: " + data.getParentId());
-        System.out.println("🧩 UnitName: " + data.getUnitName());
+ // =============================
+ // 🔹 Add Unit (return inserted subunit ID) - FIXED for image handling
+ // =============================
+ public String addUnit(WrapperUnit data) {
+     System.out.println("📥 Received addUnit request");
+     System.out.println("🧩 RootUnitId: " + data.getRootId());
+     System.out.println("🧩 ParentId: " + data.getParentId());
+     System.out.println("🧩 UnitName: " + data.getUnitName());
+     System.out.println("🖼️ Image URLs: " + (data.getImageUrls() != null ? data.getImageUrls() : "null"));
+     System.out.println("🎵 Audio Files: " + (data.getAudioFileId() != null ? data.getAudioFileId() : "null"));
 
-        UnitRequest root = getById(data.getRootId(), data.getSubjectName(), data.getDbname());
-        if (root == null) {
-            System.out.println("❌ Root unit not found");
-            return null;
-        }
+     UnitRequest root = getById(data.getRootId(), data.getSubjectName(), data.getDbname());
+     if (root == null) {
+         System.out.println("❌ Root unit not found");
+         return null;
+     }
 
-        Unit unit = new Unit();
-        unit.setId(new ObjectId().toString());
-        unit.setParentId(data.getParentId());
-        unit.setUnitName(data.getUnitName());
-        unit.setExplanation(data.getExplanation());
-        unit.setAudioFileId(data.getAudioFileId() != null ? data.getAudioFileId() : new ArrayList<>());
-        unit.setImageUrls(data.getImageUrls() != null ? data.getImageUrls() : new ArrayList<>());
-        unit.setAiVideoUrl(data.getAiVideoUrl());
-        unit.setUnits(new ArrayList<>()); // initialize nested units list
+     Unit unit = new Unit();
+     unit.setId(new ObjectId().toString());
+     unit.setParentId(data.getParentId());
+     unit.setUnitName(data.getUnitName());
+     unit.setExplanation(data.getExplanation());
+     
+     // ✅ FIXED: Properly handle image URLs - ensure it's never null
+     if (data.getImageUrls() != null && !data.getImageUrls().isEmpty()) {
+         unit.setImageUrls(new ArrayList<>(data.getImageUrls()));
+         System.out.println("✅ Setting " + data.getImageUrls().size() + " image URLs");
+     } else {
+         unit.setImageUrls(new ArrayList<>());
+         System.out.println("ℹ️ No image URLs provided, setting empty list");
+     }
+     
+     // ✅ FIXED: Properly handle audio files - ensure it's never null
+     if (data.getAudioFileId() != null && !data.getAudioFileId().isEmpty()) {
+         unit.setAudioFileId(new ArrayList<>(data.getAudioFileId()));
+         System.out.println("✅ Setting " + data.getAudioFileId().size() + " audio files");
+     } else {
+         unit.setAudioFileId(new ArrayList<>());
+         System.out.println("ℹ️ No audio files provided, setting empty list");
+     }
+     
+     unit.setAiVideoUrl(data.getAiVideoUrl() != null ? data.getAiVideoUrl() : "");
+     unit.setUnits(new ArrayList<>()); // initialize nested units list
 
-        boolean inserted;
-        if (root.getId().equals(data.getParentId())) {
-            if (root.getUnits() == null) root.setUnits(new ArrayList<>());
-            root.getUnits().add(unit);
-            inserted = true;
-        } else {
-            inserted = insertIntoParent(root.getUnits(), data.getParentId(), unit);
-        }
+     boolean inserted;
+     if (root.getId().equals(data.getParentId())) {
+         if (root.getUnits() == null) root.setUnits(new ArrayList<>());
+         root.getUnits().add(unit);
+         inserted = true;
+     } else {
+         inserted = insertIntoParent(root.getUnits(), data.getParentId(), unit);
+     }
 
-        if (!inserted) {
-            System.out.println("⚠️ Parent ID not found");
-            return null;
-        }
+     if (!inserted) {
+         System.out.println("⚠️ Parent ID not found");
+         return null;
+     }
 
-        MongoTemplate mongoTemplate = getTemplate(data.getDbname());
-        mongoTemplate.save(root, data.getSubjectName());
-        System.out.println("✅ Unit added successfully: " + unit.getUnitName());
+     MongoTemplate mongoTemplate = getTemplate(data.getDbname());
+     mongoTemplate.save(root, data.getSubjectName());
+     System.out.println("✅ Unit added successfully: " + unit.getUnitName() + " with " + unit.getImageUrls().size() + " images");
 
-        return unit.getId();
-    }
+     return unit.getId();
+ }
 
     // =============================
     // 🔹 Recursive insertion helper
