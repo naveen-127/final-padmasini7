@@ -1,7 +1,5 @@
 package com.padmasiniAdmin.padmasiniAdmin_1.controller.imageController;
 
-import java.net.URL;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,11 +15,9 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 @RestController
-@RequestMapping("/image")
-@CrossOrigin(origins = "http://localhost:3000")
+@RequestMapping("/api/image")
 public class ImageController {
 
     private final Region region;
