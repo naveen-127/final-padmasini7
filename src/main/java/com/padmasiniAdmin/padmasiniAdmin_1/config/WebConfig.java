@@ -13,7 +13,8 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
            .allowedOriginPatterns(
                "https://api.trilokinnovations.com",
-               "https://d3ty37mf4sf9cz.cloudfront.net",
+               "https://d3ty37mf4sf9cz.cloudfront.net", // Keep this if still used
+               "https://dafj1druksig9.cloudfront.net",  // ← ADD THIS LINE (the one from error)
                "http://3.91.243.188:3000",
                "https://majestic-frangollo-031fed.netlify.app",
                "https://classy-kulfi-cddfeb.netlify.app",
@@ -25,15 +26,15 @@ public class WebConfig implements WebMvcConfigurer {
                "http://localhost:*",
                "https://*.netlify.app",
                "https://www.trilokinnovations.com",
-               "http://www.trilokinnovations.com", // Add HTTP version
-               "https://trilokinnovations.com", // Add without www
-               "http://trilokinnovations.com", // Add HTTP without www
-               "http://trilokinnovations.s3-website.ap-south-1.amazonaws.com",
-               "https://dafj1druksig9.cloudfront.net" // ← No trailing comma on last item
-)
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                .allowedHeaders("*")
-                .allowCredentials(true)
-                .maxAge(3600);
+               "http://www.trilokinnovations.com",
+               "https://trilokinnovations.com",
+               "http://trilokinnovations.com",
+               "http://trilokinnovations.s3-website.ap-south-1.amazonaws.com"
+               // Removed the extra CloudFront URL that was here
+           )
+           .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
+           .allowedHeaders("*")
+           .allowCredentials(true)
+           .maxAge(3600);
     }
 }
