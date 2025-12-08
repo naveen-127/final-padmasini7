@@ -11,83 +11,68 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 @RestController
-@RequestMapping("/api/image")
+@RequestMapping("/image")
+@CrossOrigin(origins = "http://localhost:3000")
 public class ImageController {
 
     private final Region region;
     private final String bucketName;
-    private final DefaultCredentialsProvider credentialsProvider;
+    private final StaticCredentialsProvider credentialsProvider;
     private final S3Client s3Client;
 
     public ImageController(
             @Value("${aws.region:ap-south-1}") String awsRegion,
-            @Value("${aws.bucket.name:trilokinnovations-test-admin}") String bucketName
+            @Value("${aws.bucket.name:trilokinnovations-test-admin}") String bucketName,
+            @Value("${aws.access.key:}") String accessKey,
+            @Value("${aws.secret.key:}") String secretKey
     ) {
         this.region = Region.of(awsRegion);
         this.bucketName = bucketName;
-        this.credentialsProvider = DefaultCredentialsProvider.create();
+        
+        System.out.println("=== AWS Configuration ===");
+        System.out.println("Region: " + awsRegion);
+        System.out.println("Bucket: " + bucketName);
+        System.out.println("Access Key provided: " + (!accessKey.isEmpty() ? "YES" : "NO"));
+        System.out.println("Secret Key provided: " + (!secretKey.isEmpty() ? "YES" : "NO"));
+        
+        // Always use explicit credentials from application.properties
+        if (!accessKey.isEmpty() && !secretKey.isEmpty()) {
+            System.out.println("Using credentials from application.properties");
+            AwsBasicCredentials awsCreds = AwsBasicCredentials.create(accessKey, secretKey);
+            this.credentialsProvider = StaticCredentialsProvider.create(awsCreds);
+        } else {
+            System.out.println("⚠️ WARNING: No AWS credentials found in application.properties!");
+            System.out.println("Please add: aws.access.key=YOUR_KEY and aws.secret.key=YOUR_SECRET");
+            throw new RuntimeException("AWS credentials not configured");
+        }
+        
         this.s3Client = S3Client.builder()
                 .region(region)
                 .credentialsProvider(credentialsProvider)
                 .build();
+        
+        System.out.println("AWS Client initialized successfully");
+        System.out.println("===========================");
     }
 
-    // ✅ Presigned URL
-    @GetMapping("/presigned-url-image")
-    public ResponseEntity<Map<String, String>> getPresignedUrl(
-            @RequestParam String fileName,
-            @RequestParam String fileType,
-            @RequestParam String folderPath) {
-
-        try (S3Presigner presigner = S3Presigner.builder()
-                .region(region)
-                .credentialsProvider(credentialsProvider)
-                .build()) {
-
-            String key = folderPath + "/" + System.currentTimeMillis() + "-" + fileName;
-
-            PutObjectRequest objectRequest = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(key)
-                    .contentType(fileType)
-                    .build();
-
-            PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
-                    .putObjectRequest(objectRequest)
-                    .signatureDuration(Duration.ofMinutes(30))
-                    .build();
-
-            URL uploadUrl = presigner.presignPutObject(presignRequest).url();
-
-            Map<String, String> response = new HashMap<>();
-            response.put("uploadUrl", uploadUrl.toString());
-            response.put("fileUrl", "https://" + bucketName + ".s3." + region.id() + ".amazonaws.com/" + key);
-
-            System.out.println("✅ Presigned URL generated: " + uploadUrl);
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Could not generate presigned URL: " + e.getMessage()));
-        }
-    }
-
-    // ✅ Direct file upload (for your frontend POST /api/image/upload)
     @PostMapping("/upload")
     public ResponseEntity<Map<String, String>> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam("folderName") String folderName) {
+
+        System.out.println("=== Upload Request ===");
+        System.out.println("File: " + file.getOriginalFilename());
+        System.out.println("Size: " + file.getSize());
+        System.out.println("Folder: " + folderName);
 
         try {
             String key = folderName + "/" + System.currentTimeMillis() + "-" + file.getOriginalFilename();
@@ -102,13 +87,23 @@ public class ImageController {
             );
 
             String fileUrl = "https://" + bucketName + ".s3." + region.id() + ".amazonaws.com/" + key;
+            
+            System.out.println("✅ Upload successful!");
+            System.out.println("URL: " + fileUrl);
 
             return ResponseEntity.ok(Map.of("fileUrl", fileUrl));
 
         } catch (Exception e) {
+            System.out.println("❌ Upload failed!");
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
         }
+    }
+    
+    // Simple test endpoint
+    @GetMapping("/test")
+    public ResponseEntity<String> test() {
+        return ResponseEntity.ok("Image controller is working!");
     }
 }
