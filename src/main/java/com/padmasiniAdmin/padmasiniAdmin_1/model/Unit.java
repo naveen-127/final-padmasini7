@@ -20,6 +20,8 @@ public class Unit {
     private List<String> imageUrls = new ArrayList<>();
     private String aiVideoUrl;
 
+    private List<String> tags = new ArrayList<>();
+
     // ✅ Nested subtopics
     private List<Unit> units = new ArrayList<>();
 
@@ -48,6 +50,11 @@ public class Unit {
 
     public String getExplanation() { return explanation; }
     public void setExplanation(String explanation) { this.explanation = explanation; }
+
+     public List<String> getTags() { return tags; }
+    public void setTags(List<String> tags) {
+        this.tags = tags != null ? tags : new ArrayList<>();
+    }
 
     public List<String> getAudioFileId() { return audioFileId; }
     public void setAudioFileId(List<String> audioFileId) {
@@ -78,6 +85,7 @@ public class Unit {
                 ", explanation=" + explanation +
                 ", audioCount=" + (audioFileId != null ? audioFileId.size() : 0) +
                 ", imageCount=" + (imageUrls != null ? imageUrls.size() : 0) +
+                ", tagCount=" + (tags != null ? tags.size() : 0) +
                 ", subUnitCount=" + (units != null ? units.size() : 0) +
                 ", aiVideoUrl=" + aiVideoUrl + "]";
     }
