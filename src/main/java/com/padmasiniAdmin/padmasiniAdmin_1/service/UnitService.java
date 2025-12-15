@@ -103,6 +103,8 @@ public class UnitService {
      System.out.println("🧩 UnitName: " + data.getUnitName());
      System.out.println("🖼️ Image URLs: " + (data.getImageUrls() != null ? data.getImageUrls() : "null"));
      System.out.println("🎵 Audio Files: " + (data.getAudioFileId() != null ? data.getAudioFileId() : "null"));
+     System.out.println("🏷️ Tags: " + (data.getTags() != null ? data.getTags() : "null"));
+
 
      UnitRequest root = getById(data.getRootId(), data.getSubjectName(), data.getDbname());
      if (root == null) {
@@ -133,6 +135,14 @@ public class UnitService {
          unit.setAudioFileId(new ArrayList<>());
          System.out.println("ℹ️ No audio files provided, setting empty list");
      }
+
+     if (data.getTags() != null && !data.getTags().isEmpty()) {
+        unit.setTags(new ArrayList<>(data.getTags()));
+        System.out.println("✅ Setting " + data.getTags().size() + " tags: " + data.getTags());
+    } else {
+        unit.setTags(new ArrayList<>());
+        System.out.println("ℹ️ No tags provided, setting empty list");
+    }
      
      unit.setAiVideoUrl(data.getAiVideoUrl() != null ? data.getAiVideoUrl() : "");
      unit.setUnits(new ArrayList<>()); // initialize nested units list
@@ -183,6 +193,8 @@ public class UnitService {
  // =============================
  public boolean updateUnit(WrapperUnit data) {
      System.out.println("✏️ Received updateUnit request for: " + data.getUnitName());
+     System.out.println("🏷️ Tags in update: " + (data.getTags() != null ? data.getTags() : "null"));
+
 
      UnitRequest root = getById(data.getRootId(), data.getSubjectName(), data.getDbname());
      if (root == null) {
@@ -198,6 +210,7 @@ public class UnitService {
          root.setExplanation(data.getExplanation());
          root.setImageUrls(data.getImageUrls());
          root.setAudioFileId(data.getAudioFileId());
+         root.setTags(data.getTags()); // ✅ Update tags
          root.setAiVideoUrl(data.getAiVideoUrl());
          updated = true;
      } else {
@@ -225,6 +238,7 @@ public class UnitService {
              u.setExplanation(data.getExplanation());
              u.setImageUrls(data.getImageUrls());
              u.setAudioFileId(data.getAudioFileId());
+             u.setTags(data.getTags()); // ✅ Update tags
              u.setAiVideoUrl(data.getAiVideoUrl());
              return true;
          }
@@ -308,6 +322,7 @@ private boolean deleteRecursive(List<Unit> units, String targetId) {
             current.setExplanation(data.getExplanation());
             current.setAudioFileId(data.getAudioFileId() != null ? data.getAudioFileId() : new ArrayList<>());
             current.setImageUrls(data.getImageUrls() != null ? data.getImageUrls() : new ArrayList<>());
+            current.setTags(data.getTags() != null ? data.getTags() : new ArrayList<>()); // ✅ Add tags
             current.setAiVideoUrl(data.getAiVideoUrl() != null ? data.getAiVideoUrl() : null);
             return true;
         }
