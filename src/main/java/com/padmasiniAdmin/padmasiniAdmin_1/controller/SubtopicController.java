@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api")
@@ -345,7 +346,7 @@ public class SubtopicController {
             System.out.println("🔍 Debug subtopic in ALL collections: " + subtopicId);
             
             // Get all collections in the database
-            List<String> collectionNames = mongoTemplate.getCollectionNames();
+            Set<String> collectionNames = mongoTemplate.getCollectionNames();
             System.out.println("📚 Available collections: " + collectionNames);
             
             List<Map<String, Object>> foundIn = new ArrayList<>();
