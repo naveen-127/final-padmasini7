@@ -7,8 +7,6 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.bson.types.ObjectId;
-
 import com.mongodb.client.result.UpdateResult;
 
 import java.util.ArrayList;
@@ -19,10 +17,17 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
+@CrossOrigin(origins = "*") // Allow all origins for testing
 public class SubtopicController {
 
     @Autowired
     private MongoTemplate mongoTemplate;
+
+    // Helper method to safely get string value from map
+    private String getStringValue(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        return value != null ? value.toString() : null;
+    }
 
     // NEW: Recursive method to update nested subtopic with AI video
     private boolean updateNestedSubtopicRecursive(List<Map<String, Object>> subtopics, String targetId, String aiVideoUrl) {
@@ -62,10 +67,57 @@ public class SubtopicController {
         return false;
     }
 
-    // Helper method to safely get string value from map
-    private String getStringValue(Map<String, Object> map, String key) {
-        Object value = map.get(key);
-        return value != null ? value.toString() : null;
+    // Helper method for deep copy of list
+    private List<Map<String, Object>> deepCopyList(List<Map<String, Object>> original) {
+        List<Map<String, Object>> copy = new ArrayList<>();
+        for (Map<String, Object> item : original) {
+            copy.add(new HashMap<>(item));
+        }
+        return copy;
+    }
+
+    // Original direct update methods as fallback
+    private boolean performDirectUpdates(UpdateSubtopicRequest request, String collectionName) {
+        try {
+            // Try updating as nested unit in units array
+            Query query1 = new Query(Criteria.where("units._id").is(request.getSubtopicId()));
+            Update update1 = new Update().set("units.$.aiVideoUrl", request.getAiVideoUrl())
+                                         .set("units.$.updatedAt", new Date());
+            UpdateResult result1 = mongoTemplate.updateFirst(query1, update1, collectionName);
+            
+            if (result1.getMatchedCount() > 0) {
+                System.out.println("✅ Direct update successful via units._id");
+                return true;
+            }
+
+            // Try with units.id field
+            Query query2 = new Query(Criteria.where("units.id").is(request.getSubtopicId()));
+            Update update2 = new Update().set("units.$.aiVideoUrl", request.getAiVideoUrl())
+                                         .set("units.$.updatedAt", new Date());
+            UpdateResult result2 = mongoTemplate.updateFirst(query2, update2, collectionName);
+            
+            if (result2.getMatchedCount() > 0) {
+                System.out.println("✅ Direct update successful via units.id");
+                return true;
+            }
+
+            // Try as main document
+            Query query3 = new Query(Criteria.where("_id").is(request.getSubtopicId()));
+            Update update3 = new Update().set("aiVideoUrl", request.getAiVideoUrl())
+                                         .set("updatedAt", new Date());
+            UpdateResult result3 = mongoTemplate.updateFirst(query3, update3, collectionName);
+            
+            if (result3.getMatchedCount() > 0) {
+                System.out.println("✅ Direct update successful as main document");
+                return true;
+            }
+
+            return false;
+
+        } catch (Exception e) {
+            System.err.println("❌ Direct update fallback error: " + e.getMessage());
+            return false;
+        }
     }
 
     // NEW: Enhanced recursive update endpoint
@@ -110,6 +162,7 @@ public class SubtopicController {
                         result = mongoTemplate.updateFirst(updateQuery, update, collectionName);
                         updated = true;
                         queryUsed = "recursive_units_update";
+                        System.out.println("✅ Recursive update successful in units array");
                         break;
                     }
                 }
@@ -125,6 +178,7 @@ public class SubtopicController {
                         result = mongoTemplate.updateFirst(updateQuery, update, collectionName);
                         updated = true;
                         queryUsed = "recursive_children_update";
+                        System.out.println("✅ Recursive update successful in children array");
                         break;
                     }
                 }
@@ -157,50 +211,7 @@ public class SubtopicController {
         }
     }
 
-    // Helper method for deep copy of list
-    private List<Map<String, Object>> deepCopyList(List<Map<String, Object>> original) {
-        List<Map<String, Object>> copy = new ArrayList<>();
-        for (Map<String, Object> item : original) {
-            copy.add(new HashMap<>(item));
-        }
-        return copy;
-    }
-
-    // Original direct update methods as fallback
-    private boolean performDirectUpdates(UpdateSubtopicRequest request, String collectionName) {
-        try {
-            // Try updating as nested unit in units array
-            Query query1 = new Query(Criteria.where("units._id").is(request.getSubtopicId()));
-            Update update1 = new Update().set("units.$.aiVideoUrl", request.getAiVideoUrl());
-            UpdateResult result1 = mongoTemplate.updateFirst(query1, update1, collectionName);
-            
-            if (result1.getMatchedCount() > 0) {
-                return true;
-            }
-
-            // Try with units.id field
-            Query query2 = new Query(Criteria.where("units.id").is(request.getSubtopicId()));
-            Update update2 = new Update().set("units.$.aiVideoUrl", request.getAiVideoUrl());
-            UpdateResult result2 = mongoTemplate.updateFirst(query2, update2, collectionName);
-            
-            if (result2.getMatchedCount() > 0) {
-                return true;
-            }
-
-            // Try as main document
-            Query query3 = new Query(Criteria.where("_id").is(request.getSubtopicId()));
-            Update update3 = new Update().set("aiVideoUrl", request.getAiVideoUrl());
-            UpdateResult result3 = mongoTemplate.updateFirst(query3, update3, collectionName);
-            
-            return result3.getMatchedCount() > 0;
-
-        } catch (Exception e) {
-            System.err.println("❌ Direct update fallback error: " + e.getMessage());
-            return false;
-        }
-    }
-
-    // Keep your original update endpoint for backward compatibility
+    // Original update endpoint for backward compatibility
     @PutMapping("/updateSubtopicVideo")
     public ResponseEntity<?> updateSubtopicVideo(@RequestBody UpdateSubtopicRequest request) {
         try {
@@ -223,7 +234,8 @@ public class SubtopicController {
             // Try Query 1: Update nested unit in units array using _id field
             queryUsed = "Query 1: units._id with String";
             Query query1 = new Query(Criteria.where("units._id").is(request.getSubtopicId()));
-            Update update1 = new Update().set("units.$.aiVideoUrl", request.getAiVideoUrl());
+            Update update1 = new Update().set("units.$.aiVideoUrl", request.getAiVideoUrl())
+                                         .set("units.$.updatedAt", new Date());
             result = mongoTemplate.updateFirst(query1, update1, collectionName);
 
             System.out.println("🔍 Query 1 result - Matched: " + result.getMatchedCount() + ", Modified: " + result.getModifiedCount());
@@ -232,7 +244,8 @@ public class SubtopicController {
             if (result.getMatchedCount() == 0) {
                 queryUsed = "Query 2: units.id with String";
                 Query query2 = new Query(Criteria.where("units.id").is(request.getSubtopicId()));
-                Update update2 = new Update().set("units.$.aiVideoUrl", request.getAiVideoUrl());
+                Update update2 = new Update().set("units.$.aiVideoUrl", request.getAiVideoUrl())
+                                             .set("units.$.updatedAt", new Date());
                 result = mongoTemplate.updateFirst(query2, update2, collectionName);
                 System.out.println("🔍 Query 2 result - Matched: " + result.getMatchedCount() + ", Modified: " + result.getModifiedCount());
             }
@@ -241,7 +254,8 @@ public class SubtopicController {
             if (result.getMatchedCount() == 0) {
                 queryUsed = "Query 3: _id with String";
                 Query query3 = new Query(Criteria.where("_id").is(request.getSubtopicId()));
-                Update update3 = new Update().set("aiVideoUrl", request.getAiVideoUrl());
+                Update update3 = new Update().set("aiVideoUrl", request.getAiVideoUrl())
+                                             .set("updatedAt", new Date());
                 result = mongoTemplate.updateFirst(query3, update3, collectionName);
                 System.out.println("🔍 Query 3 result - Matched: " + result.getMatchedCount() + ", Modified: " + result.getModifiedCount());
             }
@@ -274,20 +288,101 @@ public class SubtopicController {
         }
     }
 
-    // Keep all your existing debug endpoints...
+    // DEBUG: Check if subtopic exists
     @GetMapping("/debug-subtopic/{subtopicId}")
     public ResponseEntity<?> debugSubtopic(@PathVariable String subtopicId, 
                                           @RequestParam(defaultValue = "professional") String dbname,
                                           @RequestParam String subjectName) {
-        // ... keep existing implementation
-        return ResponseEntity.ok(Map.of("message", "Debug endpoint - implement as needed"));
+        try {
+            System.out.println("🔍 Debug subtopic: " + subtopicId + " in collection: " + subjectName);
+            
+            // First try the specified collection
+            Query query = new Query(new Criteria().orOperator(
+                Criteria.where("_id").is(subtopicId),
+                Criteria.where("units._id").is(subtopicId),
+                Criteria.where("units.id").is(subtopicId),
+                Criteria.where("children._id").is(subtopicId),
+                Criteria.where("children.id").is(subtopicId),
+                Criteria.where("subtopics._id").is(subtopicId),
+                Criteria.where("subtopics.id").is(subtopicId)
+            ));
+            
+            List<Object> documents = mongoTemplate.find(query, Object.class, subjectName);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("found", !documents.isEmpty());
+            response.put("count", documents.size());
+            response.put("collection", subjectName);
+            response.put("subtopicId", subtopicId);
+            
+            if (!documents.isEmpty()) {
+                System.out.println("✅ Found " + documents.size() + " document(s) in " + subjectName);
+                // Return first document (simplified for debugging)
+                Map<String, Object> firstDoc = (Map<String, Object>) documents.get(0);
+                response.put("documentId", firstDoc.get("_id"));
+                response.put("hasUnits", firstDoc.containsKey("units"));
+                response.put("hasChildren", firstDoc.containsKey("children"));
+                response.put("hasSubtopics", firstDoc.containsKey("subtopics"));
+            } else {
+                System.out.println("❌ Not found in collection: " + subjectName);
+            }
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Debug error: " + e.getMessage());
+            return ResponseEntity.status(500).body(Map.of(
+                "error", e.getMessage(),
+                "found", false
+            ));
+        }
     }
 
     @GetMapping("/debug-subtopic-all/{subtopicId}")
     public ResponseEntity<?> debugSubtopicAllCollections(@PathVariable String subtopicId, 
                                                         @RequestParam(defaultValue = "professional") String dbname) {
-        // ... keep existing implementation
-        return ResponseEntity.ok(Map.of("message", "Debug all endpoint - implement as needed"));
+        try {
+            System.out.println("🔍 Debug subtopic in ALL collections: " + subtopicId);
+            
+            // Get all collections in the database
+            List<String> collectionNames = mongoTemplate.getCollectionNames();
+            System.out.println("📚 Available collections: " + collectionNames);
+            
+            List<Map<String, Object>> foundIn = new ArrayList<>();
+            
+            for (String collectionName : collectionNames) {
+                Query query = new Query(new Criteria().orOperator(
+                    Criteria.where("_id").is(subtopicId),
+                    Criteria.where("units._id").is(subtopicId),
+                    Criteria.where("units.id").is(subtopicId)
+                ));
+                
+                List<Object> documents = mongoTemplate.find(query, Object.class, collectionName);
+                
+                if (!documents.isEmpty()) {
+                    Map<String, Object> foundInfo = new HashMap<>();
+                    foundInfo.put("collection", collectionName);
+                    foundInfo.put("count", documents.size());
+                    foundIn.add(foundInfo);
+                    System.out.println("✅ Found in collection: " + collectionName);
+                }
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("subtopicId", subtopicId);
+            response.put("found", !foundIn.isEmpty());
+            response.put("foundIn", foundIn);
+            response.put("totalCollections", collectionNames.size());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Debug all error: " + e.getMessage());
+            return ResponseEntity.status(500).body(Map.of(
+                "error", e.getMessage(),
+                "found", false
+            ));
+        }
     }
 
     // Request DTO for updateSubtopicVideo
