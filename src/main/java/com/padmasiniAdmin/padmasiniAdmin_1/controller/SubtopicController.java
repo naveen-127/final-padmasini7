@@ -18,7 +18,15 @@ import java.util.Set;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*") // Allow all origins for testing
+@CrossOrigin(origins = {
+    "https://d3ty37mf4sf9cz.cloudfront.net",
+    "http://localhost:3000",
+    "http://localhost:5173"
+}, 
+allowedHeaders = "*",
+methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS},
+allowCredentials = "true",
+maxAge = 3600)
 public class SubtopicController {
 
     @Autowired
