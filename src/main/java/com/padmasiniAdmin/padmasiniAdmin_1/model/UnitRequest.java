@@ -121,4 +121,9 @@ public class UnitRequest {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	public void setTags(List<String> tags) {
+		// TODO Auto-generated method stub
+		
+	}
 }
