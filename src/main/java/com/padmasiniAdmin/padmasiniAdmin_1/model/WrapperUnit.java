@@ -32,6 +32,8 @@ public class WrapperUnit {
     private List<String> imageUrls;       // S3 URLs of uploaded images
     private String aiVideoUrl;            // S3 URL of generated/AI video
 
+	private List<String> tags; 
+
     // ----- Audio Management -----
     private List<String> keepAudioFileIds; // IDs to retain on update
 
@@ -53,6 +55,9 @@ public class WrapperUnit {
 
     public String getExplanation() { return explanation; }
     public void setExplanation(String explanation) { this.explanation = explanation; }
+
+	public List<String> getTags() { return tags; }
+    public void setTags(List<String> tags) { this.tags = tags; }
 
     public String getDbname() { return dbname; }
     public void setDbname(String dbname) { this.dbname = dbname; }
@@ -88,6 +93,7 @@ public class WrapperUnit {
                 ", audioFileId=" + audioFileId +
                 ", imageUrls=" + imageUrls +
                 ", aiVideoUrl=" + aiVideoUrl +
+			    ", tags=" + tags +
                 ", keepAudioFileIds=" + keepAudioFileIds +
                 ", test=" + test + "]";
     }
