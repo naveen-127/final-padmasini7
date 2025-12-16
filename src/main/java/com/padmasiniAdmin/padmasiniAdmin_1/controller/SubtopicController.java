@@ -22,93 +22,136 @@ public class SubtopicController {
     private MongoTemplate mongoTemplate;
 
     // SIMPLIFIED: Direct update endpoint
-    @PutMapping("/updateSubtopicVideo")
-    public ResponseEntity<?> updateSubtopicVideo(@RequestBody UpdateSubtopicRequest request) {
+  // SIMPLIFIED Spring Boot controller for your structure
+@PutMapping("/updateSubtopicVideo")
+public ResponseEntity<?> updateSubtopicVideo(@RequestBody UpdateSubtopicRequest request) {
+    try {
+        System.out.println("🔄 Spring Boot: Updating subtopic video");
+        System.out.println("📋 Request: " + request.toString());
+
+        String collectionName = request.getSubjectName();
+        if (collectionName == null || collectionName.trim().isEmpty()) { 
+            return ResponseEntity.badRequest().body(Map.of(
+                "error", "subjectName is required",
+                "message", "Please provide the collection/subject name"
+            ));
+        }
+
+        // Try different update strategies
+        boolean updated = false;
+        String queryUsed = "";
+        UpdateResult result = null;
+
+        // Strategy 1: Update in units array with _id (string)
         try {
-            System.out.println("🔄 Spring Boot: Updating subtopic video");
-            System.out.println("📋 Request: " + request.toString());
-
-            String collectionName = request.getSubjectName();
-            if (collectionName == null || collectionName.trim().isEmpty()) { 
-                return ResponseEntity.badRequest().body(Map.of(
-                    "error", "subjectName is required",
-                    "message", "Please provide the collection/subject name"
-                ));
+            Query query1 = new Query(Criteria.where("units._id").is(request.getSubtopicId()));
+            Update update1 = new Update()
+                .set("units.$.aiVideoUrl", request.getAiVideoUrl())
+                .set("units.$.updatedAt", new Date())
+                .set("units.$.videoStorage", "aws_s3");
+            
+            result = mongoTemplate.updateFirst(query1, update1, collectionName);
+            queryUsed = "units._id (string)";
+            
+            if (result.getMatchedCount() > 0) {
+                updated = true;
+                System.out.println("✅ Strategy 1 succeeded: " + queryUsed);
             }
+        } catch (Exception e) {
+            System.out.println("⚠️ Strategy 1 failed: " + e.getMessage());
+        }
 
-            UpdateResult result = null;
-            String queryUsed = "";
-            boolean updated = false;
-
-            // Try different query strategies
-            String[] strategies = {
-                "units._id", "units.id", "_id", "children._id", "children.id", 
-                "subtopics._id", "subtopics.id"
-            };
-
-            for (String field : strategies) {
-                try {
-                    Query query = new Query(Criteria.where(field).is(request.getSubtopicId()));
+        // Strategy 2: Try with ObjectId
+        if (!updated) {
+            try {
+                // Check if subtopicId is a valid ObjectId
+                if (ObjectId.isValid(request.getSubtopicId())) {
+                    ObjectId objectId = new ObjectId(request.getSubtopicId());
                     
-                    // Determine if it's a nested field (contains dot)
-                    Update update;
-                    if (field.contains(".")) {
-                        // Nested field update
-                        String arrayField = field.substring(0, field.lastIndexOf('.'));
-                        String arrayElement = "$." + field.substring(field.lastIndexOf('.') + 1);
-                        update = new Update().set(arrayField + ".aiVideoUrl", request.getAiVideoUrl())
-                                             .set(arrayField + ".updatedAt", new Date())
-                                             .set(arrayField + ".videoStorage", "aws_s3");
-                    } else {
-                        // Main document update
-                        update = new Update().set("aiVideoUrl", request.getAiVideoUrl())
-                                             .set("updatedAt", new Date())
-                                             .set("videoStorage", "aws_s3");
-                    }
-
-                    result = mongoTemplate.updateFirst(query, update, collectionName);
-                    queryUsed = field;
+                    Query query2 = new Query(Criteria.where("units._id").is(objectId));
+                    Update update2 = new Update()
+                        .set("units.$.aiVideoUrl", request.getAiVideoUrl())
+                        .set("units.$.updatedAt", new Date())
+                        .set("units.$.videoStorage", "aws_s3");
+                    
+                    result = mongoTemplate.updateFirst(query2, update2, collectionName);
+                    queryUsed = "units._id (ObjectId)";
                     
                     if (result.getMatchedCount() > 0) {
                         updated = true;
-                        System.out.println("✅ Update successful with field: " + field);
-                        System.out.println("📊 Matched: " + result.getMatchedCount() + ", Modified: " + result.getModifiedCount());
-                        break;
+                        System.out.println("✅ Strategy 2 succeeded: " + queryUsed);
                     }
-                } catch (Exception e) {
-                    System.out.println("⚠️ Strategy " + field + " failed: " + e.getMessage());
                 }
+            } catch (Exception e) {
+                System.out.println("⚠️ Strategy 2 failed: " + e.getMessage());
             }
-
-            Map<String, Object> response = new HashMap<>();
-            if (updated) {
-                response.put("status", "success");
-                response.put("message", "AI video URL saved successfully");
-                response.put("queryUsed", queryUsed);
-                response.put("collection", collectionName);
-                response.put("matched", result.getMatchedCount());
-                response.put("modified", result.getModifiedCount());
-                response.put("aiVideoUrl", request.getAiVideoUrl());
-                response.put("subtopicId", request.getSubtopicId());
-                response.put("timestamp", new Date().toString());
-            } else {
-                response.put("status", "not_found");
-                response.put("message", "Subtopic not found in collection: " + collectionName);
-                response.put("collection", collectionName);
-                response.put("subtopicId", request.getSubtopicId());
-            }
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            System.err.println("❌ Spring Boot Error: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of(
-                "error", "Failed to update subtopic: " + e.getMessage(),
-                "status", "error"
-            ));
         }
+
+        // Strategy 3: Try with id field
+        if (!updated) {
+            try {
+                Query query3 = new Query(Criteria.where("units.id").is(request.getSubtopicId()));
+                Update update3 = new Update()
+                    .set("units.$.aiVideoUrl", request.getAiVideoUrl())
+                    .set("units.$.updatedAt", new Date())
+                    .set("units.$.videoStorage", "aws_s3");
+                
+                result = mongoTemplate.updateFirst(query3, update3, collectionName);
+                queryUsed = "units.id";
+                
+                if (result.getMatchedCount() > 0) {
+                    updated = true;
+                    System.out.println("✅ Strategy 3 succeeded: " + queryUsed);
+                }
+            } catch (Exception e) {
+                System.out.println("⚠️ Strategy 3 failed: " + e.getMessage());
+            }
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        
+        if (updated) {
+            response.put("status", "success");
+            response.put("message", "AI video URL saved successfully");
+            response.put("queryUsed", queryUsed);
+            response.put("collection", collectionName);
+            response.put("matched", result.getMatchedCount());
+            response.put("modified", result.getModifiedCount());
+            response.put("aiVideoUrl", request.getAiVideoUrl());
+            response.put("subtopicId", request.getSubtopicId());
+        } else {
+            response.put("status", "not_found");
+            response.put("message", "Could not find subtopic with ID: " + request.getSubtopicId());
+            response.put("collection", collectionName);
+            response.put("suggestion", "Check if the subtopicId exists in the 'units' array");
+            
+            // Debug: Check what's in the collection
+            try {
+                List<Object> sampleDocs = mongoTemplate.findAll(Object.class, collectionName);
+                response.put("totalDocuments", sampleDocs.size());
+                if (sampleDocs.size() > 0) {
+                    Map<String, Object> firstDoc = (Map<String, Object>) sampleDocs.get(0);
+                    response.put("sampleDocumentStructure", Map.of(
+                        "hasUnits", firstDoc.containsKey("units"),
+                        "unitsCount", firstDoc.containsKey("units") ? ((List<?>)firstDoc.get("units")).size() : 0
+                    ));
+                }
+            } catch (Exception e) {
+                response.put("debugError", e.getMessage());
+            }
+        }
+
+        return ResponseEntity.ok(response);
+
+    } catch (Exception e) {
+        System.err.println("❌ Spring Boot Error: " + e.getMessage());
+        e.printStackTrace();
+        return ResponseEntity.status(500).body(Map.of(
+            "error", "Failed to update subtopic: " + e.getMessage(),
+            "status", "error"
+        ));
     }
+}
 
     // DEBUG endpoint to check if subtopic exists
     @GetMapping("/check-subtopic/{subtopicId}")
