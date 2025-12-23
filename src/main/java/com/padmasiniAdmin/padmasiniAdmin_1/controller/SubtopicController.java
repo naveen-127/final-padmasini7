@@ -24,249 +24,12 @@ public class SubtopicController {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    // ✅ IMPROVED: Recursive helper method for finding and updating nested subtopics
-    @SuppressWarnings("unchecked")
-    private boolean updateNestedSubtopicRecursive(List<Map<String, Object>> items, 
-                                                 String targetId, 
-                                                 String aiVideoUrl,
-                                                 String collectionName,
-                                                 String parentDocumentId,
-                                                 String path,
-                                                 int depth) {
-        if (depth > 10) { // Prevent infinite recursion
-            System.out.println("⚠️ Max recursion depth reached");
-            return false;
-        }
-        
-        for (int i = 0; i < items.size(); i++) {
-            Map<String, Object> item = items.get(i);
-            
-            // Check if this is the target subtopic
-            String itemId = null;
-            if (item.get("_id") != null) {
-                itemId = item.get("_id").toString();
-            } else if (item.get("id") != null) {
-                itemId = item.get("id").toString();
-            }
-            
-            boolean isMatch = (targetId.equals(itemId) || 
-                             targetId.equals(item.get("_id")) || 
-                             targetId.equals(item.get("id")));
-            
-            if (isMatch) {
-                // Found it! Update this subtopic
-                System.out.println("✅ Found target at path: " + path + "[" + i + "]");
-                
-                // Build the query using the parent document ID
-                Query query = new Query(Criteria.where("_id").is(parentDocumentId));
-                
-                // Build the update path correctly
-                String updatePath = buildUpdatePath(path, i);
-                
-                // Build update
-                Update update = new Update()
-                    .set(updatePath + ".aiVideoUrl", aiVideoUrl)
-                    .set(updatePath + ".updatedAt", new Date())
-                    .set(updatePath + ".videoStorage", "aws_s3");
-                
-                System.out.println("📝 Update path: " + updatePath);
-                
-                UpdateResult result = mongoTemplate.updateFirst(query, update, collectionName);
-                
-                System.out.println("📊 Update result: " + result.getMatchedCount() + " matched, " + 
-                                  result.getModifiedCount() + " modified");
-                
-                return result.getMatchedCount() > 0;
-            }
-            
-            // Recursively search in nested arrays
-            List<String> arrayFields = new ArrayList<>();
-            arrayFields.add("units");
-            arrayFields.add("subtopics");
-            arrayFields.add("children");
-            
-            for (String field : arrayFields) {
-                if (item.containsKey(field) && item.get(field) instanceof List) {
-                    List<Map<String, Object>> nestedItems = (List<Map<String, Object>>) item.get(field);
-                    String newPath = path.isEmpty() ? field : path + "." + field;
-                    boolean found = updateNestedSubtopicRecursive(
-                        nestedItems,
-                        targetId, 
-                        aiVideoUrl, 
-                        collectionName, 
-                        parentDocumentId,
-                        newPath,
-                        depth + 1
-                    );
-                    if (found) return true;
-                }
-            }
-        }
-        return false;
-    }
-    
-    // ✅ NEW: Helper method to build correct update path
-    private String buildUpdatePath(String path, int index) {
-        if (path.isEmpty()) return "";
-        
-        String[] parts = path.split("\\.");
-        StringBuilder updatePath = new StringBuilder();
-        
-        for (int i = 0; i < parts.length; i++) {
-            if (i > 0) updatePath.append(".");
-            if (i == parts.length - 1) {
-                // Last part gets the positional operator $
-                updatePath.append(parts[i]).append(".$");
-            } else {
-                updatePath.append(parts[i]);
-            }
-        }
-        
-        // Add the index for the specific item
-        updatePath.append("[").append(index).append("]");
-        return updatePath.toString();
-    }
-
-    // ✅ SIMPLIFIED: Direct update endpoint
+    // ✅ FIXED: Universal recursive update method for ALL nested structures
     @PutMapping("/updateSubtopicVideo")
     @SuppressWarnings("unchecked")
     public ResponseEntity<?> updateSubtopicVideo(@RequestBody UpdateSubtopicRequest request) {
         try {
-            System.out.println("🔄 Spring Boot: Updating subtopic video");
-            System.out.println("📋 Request: " + request.toString());
-
-            String collectionName = request.getSubjectName();
-            if (collectionName == null || collectionName.trim().isEmpty()) { 
-                return ResponseEntity.badRequest().body(Map.of(
-                    "error", "subjectName is required",
-                    "message", "Please provide the collection/subject name"
-                ));
-            }
-
-            // Try to find and update the subtopic
-            boolean updated = updateSubtopicInCollection(collectionName, request.getSubtopicId(), request.getAiVideoUrl());
-
-            Map<String, Object> response = new HashMap<>();
-            
-            if (updated) {
-                response.put("status", "success");
-                response.put("message", "AI video URL saved successfully");
-                response.put("collection", collectionName);
-                response.put("aiVideoUrl", request.getAiVideoUrl());
-                response.put("subtopicId", request.getSubtopicId());
-                response.put("timestamp", new Date().toString());
-            } else {
-                response.put("status", "not_found");
-                response.put("message", "Could not find subtopic with ID: " + request.getSubtopicId());
-                response.put("collection", collectionName);
-                response.put("suggestion", "Try the recursive endpoint: /updateSubtopicVideoRecursive");
-            }
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            System.err.println("❌ Spring Boot Error: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of(
-                "error", "Failed to update subtopic: " + e.getMessage(),
-                "status", "error"
-            ));
-        }
-    }
-    
-    // ✅ NEW: Helper method for finding and updating subtopic
-    @SuppressWarnings("unchecked")
-    private boolean updateSubtopicInCollection(String collectionName, String subtopicId, String aiVideoUrl) {
-        // Get all documents in the collection
-        List<Map<String, Object>> allDocuments = new ArrayList<>();
-        List<?> rawDocuments = mongoTemplate.findAll(Map.class, collectionName);
-        for (Object doc : rawDocuments) {
-            if (doc instanceof Map) {
-                allDocuments.add((Map<String, Object>) doc);
-            }
-        }
-        
-        System.out.println("🔍 Searching in " + allDocuments.size() + " documents for subtopic: " + subtopicId);
-        
-        for (Map<String, Object> document : allDocuments) {
-            String documentId = document.get("_id").toString();
-            
-            // Check if this document itself is the target
-            if (subtopicId.equals(documentId) || subtopicId.equals(document.get("_id"))) {
-                Query query = new Query(Criteria.where("_id").is(documentId));
-                Update update = new Update()
-                    .set("aiVideoUrl", aiVideoUrl)
-                    .set("updatedAt", new Date())
-                    .set("videoStorage", "aws_s3");
-                
-                UpdateResult result = mongoTemplate.updateFirst(query, update, collectionName);
-                if (result.getMatchedCount() > 0) {
-                    System.out.println("✅ Updated main document: " + documentId);
-                    return true;
-                }
-            }
-            
-            // Check in units array
-            if (updateInArray(document, "units", subtopicId, documentId, aiVideoUrl, collectionName)) {
-                return true;
-            }
-            
-            // Check in subtopics array
-            if (updateInArray(document, "subtopics", subtopicId, documentId, aiVideoUrl, collectionName)) {
-                return true;
-            }
-            
-            // Check in children array
-            if (updateInArray(document, "children", subtopicId, documentId, aiVideoUrl, collectionName)) {
-                return true;
-            }
-        }
-        
-        return false;
-    }
-    
-    // ✅ NEW: Helper method for updating in array
-    @SuppressWarnings("unchecked")
-    private boolean updateInArray(Map<String, Object> document, String arrayField, 
-                                 String subtopicId, String documentId, 
-                                 String aiVideoUrl, String collectionName) {
-        if (document.containsKey(arrayField) && document.get(arrayField) instanceof List) {
-            List<Map<String, Object>> items = (List<Map<String, Object>>) document.get(arrayField);
-            
-            for (int i = 0; i < items.size(); i++) {
-                Map<String, Object> item = items.get(i);
-                String itemId = null;
-                if (item.get("_id") != null) {
-                    itemId = item.get("_id").toString();
-                } else if (item.get("id") != null) {
-                    itemId = item.get("id").toString();
-                }
-                
-                if (subtopicId.equals(itemId) || subtopicId.equals(item.get("_id")) || subtopicId.equals(item.get("id"))) {
-                    // Found it in this array, update it
-                    Query query = new Query(Criteria.where("_id").is(documentId));
-                    Update update = new Update()
-                        .set(arrayField + ".$.aiVideoUrl", aiVideoUrl)
-                        .set(arrayField + ".$.updatedAt", new Date())
-                        .set(arrayField + ".$.videoStorage", "aws_s3");
-                    
-                    UpdateResult result = mongoTemplate.updateFirst(query, update, collectionName);
-                    if (result.getMatchedCount() > 0) {
-                        System.out.println("✅ Updated in " + arrayField + " array at index " + i + " in document: " + documentId);
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    // ✅ NEW: Improved recursive update endpoint for deeply nested subtopics
-    @PutMapping("/updateSubtopicVideoRecursive")
-    @SuppressWarnings("unchecked")
-    public ResponseEntity<?> updateSubtopicVideoRecursive(@RequestBody UpdateSubtopicRequest request) {
-        try {
-            System.out.println("🔄 RECURSIVE UPDATE: Starting deep nested search");
+            System.out.println("🔄 Spring Boot: Updating subtopic video (Universal)");
             System.out.println("📋 Request: " + request.toString());
 
             String collectionName = request.getSubjectName();
@@ -277,7 +40,92 @@ public class SubtopicController {
                 ));
             }
 
-            // Get ALL documents in the collection
+            // First try with ObjectId if valid
+            if (ObjectId.isValid(request.getSubtopicId())) {
+                ObjectId targetObjectId = new ObjectId(request.getSubtopicId());
+                
+                // Strategy 1: Try updating as a main document with ObjectId
+                Query query1 = new Query(Criteria.where("_id").is(targetObjectId));
+                Update update = new Update()
+                    .set("aiVideoUrl", request.getAiVideoUrl())
+                    .set("updatedAt", new Date())
+                    .set("videoStorage", "aws_s3");
+                
+                UpdateResult result1 = mongoTemplate.updateFirst(query1, update, collectionName);
+                if (result1.getModifiedCount() > 0) {
+                    System.out.println("✅ Updated main document with ObjectId: " + request.getSubtopicId());
+                    return ResponseEntity.ok(createSuccessResponse(
+                        "Main document (ObjectId)", 
+                        collectionName, 
+                        request
+                    ));
+                }
+            }
+
+            // Strategy 2: Try updating with string _id as main document
+            Query query2 = new Query(Criteria.where("_id").is(request.getSubtopicId()));
+            Update update2 = new Update()
+                .set("aiVideoUrl", request.getAiVideoUrl())
+                .set("updatedAt", new Date())
+                .set("videoStorage", "aws_s3");
+            
+            UpdateResult result2 = mongoTemplate.updateFirst(query2, update2, collectionName);
+            if (result2.getModifiedCount() > 0) {
+                System.out.println("✅ Updated main document with string _id: " + request.getSubtopicId());
+                return ResponseEntity.ok(createSuccessResponse(
+                    "Main document (string _id)", 
+                    collectionName, 
+                    request
+                ));
+            }
+
+            // Strategy 3: Try universal recursive search and update
+            boolean updated = updateSubtopicRecursiveUniversal(collectionName, request.getSubtopicId(), request.getAiVideoUrl());
+
+            if (updated) {
+                return ResponseEntity.ok(createSuccessResponse(
+                    "Nested unit (recursive)", 
+                    collectionName, 
+                    request
+                ));
+            } else {
+                // Strategy 4: Try direct query for nested units
+                updated = updateDirectNestedUnit(collectionName, request.getSubtopicId(), request.getAiVideoUrl());
+                
+                if (updated) {
+                    return ResponseEntity.ok(createSuccessResponse(
+                        "Direct nested update", 
+                        collectionName, 
+                        request
+                    ));
+                }
+            }
+
+            // If nothing worked, return not found
+            return ResponseEntity.ok(Map.of(
+                "status", "not_found",
+                "message", "Could not find subtopic with ID: " + request.getSubtopicId(),
+                "collection", collectionName,
+                "strategies_tried", List.of("ObjectId main doc", "String _id main doc", "Recursive search", "Direct nested update")
+            ));
+
+        } catch (Exception e) {
+            System.err.println("❌ Spring Boot Error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Failed to update subtopic: " + e.getMessage(),
+                "status", "error"
+            ));
+        }
+    }
+
+    // ✅ NEW: Universal recursive update method for deeply nested structures
+    @SuppressWarnings("unchecked")
+    private boolean updateSubtopicRecursiveUniversal(String collectionName, String subtopicId, String aiVideoUrl) {
+        try {
+            System.out.println("🔍 Starting universal recursive search for: " + subtopicId);
+            
+            // Get all documents in the collection
             List<Map<String, Object>> allDocuments = new ArrayList<>();
             List<?> rawDocuments = mongoTemplate.findAll(Map.class, collectionName);
             for (Object doc : rawDocuments) {
@@ -285,101 +133,200 @@ public class SubtopicController {
                     allDocuments.add((Map<String, Object>) doc);
                 }
             }
-            System.out.println("📊 Found " + allDocuments.size() + " documents in collection");
-
-            boolean updated = false;
-            String foundPath = null;
-            String foundInDocumentId = null;
-
-            // Search through all documents
+            
+            System.out.println("📊 Searching in " + allDocuments.size() + " documents");
+            
             for (Map<String, Object> document : allDocuments) {
                 String documentId = document.get("_id").toString();
                 
-                System.out.println("🔍 Searching in document: " + documentId);
-                
-                // Try recursive search starting from various array fields
-                List<String> rootFields = new ArrayList<>();
-                rootFields.add("units");
-                rootFields.add("subtopics");
-                rootFields.add("children");
-                
-                // Also check main document
-                String itemId = null;
-                if (document.get("_id") != null) itemId = document.get("_id").toString();
-                else if (document.get("id") != null) itemId = document.get("id").toString();
-                
-                if (request.getSubtopicId().equals(itemId)) {
-                    // Update main document
-                    Query query = new Query(Criteria.where("_id").is(documentId));
-                    Update update = new Update()
-                        .set("aiVideoUrl", request.getAiVideoUrl())
-                        .set("updatedAt", new Date())
-                        .set("videoStorage", "aws_s3");
-                    
-                    UpdateResult result = mongoTemplate.updateFirst(query, update, collectionName);
-                    if (result.getMatchedCount() > 0) {
-                        updated = true;
-                        foundPath = "main_document";
-                        foundInDocumentId = documentId;
-                        System.out.println("✅ Updated main document: " + documentId);
-                        break;
-                    }
+                // Try to update in this document's nested structures
+                boolean updated = updateInDocumentRecursive(document, documentId, collectionName, subtopicId, aiVideoUrl);
+                if (updated) {
+                    System.out.println("✅ Found and updated in document: " + documentId);
+                    return true;
                 }
+            }
+            
+            return false;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Recursive search error: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    // ✅ NEW: Recursive update within a single document
+    @SuppressWarnings("unchecked")
+    private boolean updateInDocumentRecursive(Map<String, Object> document, String documentId, 
+                                             String collectionName, String targetId, String aiVideoUrl) {
+        // Check if this document itself matches
+        String docId = null;
+        if (document.get("_id") != null) docId = document.get("_id").toString();
+        else if (document.get("id") != null) docId = document.get("id").toString();
+        
+        if (targetId.equals(docId) || targetId.equals(document.get("_id")) || targetId.equals(document.get("id"))) {
+            // Update this main document
+            Query query = new Query(Criteria.where("_id").is(documentId));
+            Update update = new Update()
+                .set("aiVideoUrl", aiVideoUrl)
+                .set("updatedAt", new Date())
+                .set("videoStorage", "aws_s3");
+            
+            UpdateResult result = mongoTemplate.updateFirst(query, update, collectionName);
+            return result.getModifiedCount() > 0;
+        }
+        
+        // Define all possible array field names that might contain subtopics
+        List<String> arrayFields = new ArrayList<>();
+        arrayFields.add("units");
+        arrayFields.add("subtopics");
+        arrayFields.add("children");
+        arrayFields.add("topics"); // Add more if needed
+        arrayFields.add("lessons");
+        arrayFields.add("subunits");
+        
+        // Try each array field
+        for (String field : arrayFields) {
+            if (document.containsKey(field) && document.get(field) instanceof List) {
+                List<Map<String, Object>> items = (List<Map<String, Object>>) document.get(field);
                 
-                for (String rootField : rootFields) {
-                    if (document.containsKey(rootField) && document.get(rootField) instanceof List) {
-                        List<Map<String, Object>> rootItems = (List<Map<String, Object>>) document.get(rootField);
+                // Search through items at this level
+                for (int i = 0; i < items.size(); i++) {
+                    Map<String, Object> item = items.get(i);
+                    
+                    // Check if this item matches
+                    String itemId = null;
+                    if (item.get("_id") != null) itemId = item.get("_id").toString();
+                    else if (item.get("id") != null) itemId = item.get("id").toString();
+                    
+                    if (targetId.equals(itemId) || targetId.equals(item.get("_id")) || targetId.equals(item.get("id"))) {
+                        // Found it! Update using positional operator
+                        Query query = Query.query(Criteria.where("_id").is(documentId)
+                            .and(field + "._id").is(targetId));
                         
-                        System.out.println("🔍 Searching in " + rootField + " array with " + rootItems.size() + " items");
+                        // Also try with string comparison for id field
+                        if (query == null || mongoTemplate.count(query, collectionName) == 0) {
+                            query = Query.query(Criteria.where("_id").is(documentId)
+                                .and(field + ".id").is(targetId));
+                        }
                         
-                        // Perform recursive search
-                        boolean found = updateNestedSubtopicRecursive(
-                            rootItems,
-                            request.getSubtopicId(),
-                            request.getAiVideoUrl(),
-                            collectionName,
-                            documentId,
-                            rootField,
-                            0
-                        );
+                        Update update = new Update()
+                            .set(field + ".$.aiVideoUrl", aiVideoUrl)
+                            .set(field + ".$.updatedAt", new Date())
+                            .set(field + ".$.videoStorage", "aws_s3");
                         
-                        if (found) {
-                            updated = true;
-                            foundPath = rootField + " → nested";
-                            foundInDocumentId = documentId;
-                            System.out.println("✅ Found in " + rootField + " array of document: " + documentId);
-                            break;
+                        UpdateResult result = mongoTemplate.updateFirst(query, update, collectionName);
+                        if (result.getModifiedCount() > 0) {
+                            System.out.println("✅ Updated in " + field + " array at index " + i);
+                            return true;
                         }
                     }
+                    
+                    // Recursively search deeper
+                    if (updateInDocumentRecursive(item, documentId, collectionName, targetId, aiVideoUrl)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    // ✅ NEW: Direct update for nested units using aggregate query
+    private boolean updateDirectNestedUnit(String collectionName, String subtopicId, String aiVideoUrl) {
+        try {
+            System.out.println("🎯 Trying direct nested unit update for: " + subtopicId);
+            
+            // Method 1: Using positional operator with _id field
+            Query query1 = new Query(Criteria.where("units._id").is(subtopicId));
+            Update update1 = new Update()
+                .set("units.$.aiVideoUrl", aiVideoUrl)
+                .set("units.$.updatedAt", new Date())
+                .set("units.$.videoStorage", "aws_s3");
+            
+            UpdateResult result1 = mongoTemplate.updateFirst(query1, update1, collectionName);
+            if (result1.getModifiedCount() > 0) {
+                System.out.println("✅ Updated in units._id");
+                return true;
+            }
+            
+            // Method 2: Using positional operator with id field
+            Query query2 = new Query(Criteria.where("units.id").is(subtopicId));
+            Update update2 = new Update()
+                .set("units.$.aiVideoUrl", aiVideoUrl)
+                .set("units.$.updatedAt", new Date())
+                .set("units.$.videoStorage", "aws_s3");
+            
+            UpdateResult result2 = mongoTemplate.updateFirst(query2, update2, collectionName);
+            if (result2.getModifiedCount() > 0) {
+                System.out.println("✅ Updated in units.id");
+                return true;
+            }
+            
+            // Method 3: Try other array fields
+            String[] arrayFields = {"subtopics", "children", "topics", "lessons"};
+            for (String field : arrayFields) {
+                Query query = new Query(Criteria.where(field + "._id").is(subtopicId));
+                Update update = new Update()
+                    .set(field + ".$.aiVideoUrl", aiVideoUrl)
+                    .set(field + ".$.updatedAt", new Date())
+                    .set(field + ".$.videoStorage", "aws_s3");
+                
+                UpdateResult result = mongoTemplate.updateFirst(query, update, collectionName);
+                if (result.getModifiedCount() > 0) {
+                    System.out.println("✅ Updated in " + field + "._id");
+                    return true;
                 }
                 
-                if (updated) break;
+                // Try with id field
+                Query queryId = new Query(Criteria.where(field + ".id").is(subtopicId));
+                Update updateId = new Update()
+                    .set(field + ".$.aiVideoUrl", aiVideoUrl)
+                    .set(field + ".$.updatedAt", new Date())
+                    .set(field + ".$.videoStorage", "aws_s3");
+                
+                UpdateResult resultId = mongoTemplate.updateFirst(queryId, updateId, collectionName);
+                if (resultId.getModifiedCount() > 0) {
+                    System.out.println("✅ Updated in " + field + ".id");
+                    return true;
+                }
             }
-
-            Map<String, Object> response = new HashMap<>();
             
-            if (updated) {
-                response.put("status", "success");
-                response.put("message", "AI video URL saved successfully in nested structure");
-                response.put("foundIn", foundPath);
-                response.put("documentId", foundInDocumentId);
-                response.put("collection", collectionName);
-                response.put("aiVideoUrl", request.getAiVideoUrl());
-                response.put("subtopicId", request.getSubtopicId());
-                response.put("timestamp", new Date().toString());
-            } else {
-                response.put("status", "not_found");
-                response.put("message", "Could not find subtopic with ID: " + request.getSubtopicId() + " in any nested structure");
-                response.put("collection", collectionName);
-                response.put("searchedDocuments", allDocuments.size());
-                response.put("suggestion", "Check if the subtopicId exists in units/subtopics/children arrays");
-            }
+            return false;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Direct nested update error: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    // ✅ Helper method to create success response
+    private Map<String, Object> createSuccessResponse(String location, String collectionName, UpdateSubtopicRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("message", "AI video URL saved successfully");
+        response.put("location", location);
+        response.put("collection", collectionName);
+        response.put("aiVideoUrl", request.getAiVideoUrl());
+        response.put("subtopicId", request.getSubtopicId());
+        response.put("timestamp", new Date().toString());
+        response.put("updatedAt", new Date());
+        return response;
+    }
 
-            return ResponseEntity.ok(response);
-
+    // ✅ IMPROVED recursive update endpoint (for backward compatibility)
+    @PutMapping("/updateSubtopicVideoRecursive")
+    @SuppressWarnings("unchecked")
+    public ResponseEntity<?> updateSubtopicVideoRecursive(@RequestBody UpdateSubtopicRequest request) {
+        try {
+            System.out.println("🔄 RECURSIVE UPDATE: Deep nested search");
+            
+            // Just call the main update method - it now handles all cases
+            return updateSubtopicVideo(request);
+            
         } catch (Exception e) {
             System.err.println("❌ Recursive update error: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
                 "error", "Failed to update nested subtopic: " + e.getMessage(),
                 "status", "error"
@@ -387,136 +334,94 @@ public class SubtopicController {
         }
     }
 
-    // ✅ NEW: Enhanced debug endpoint with recursive search
-    @GetMapping("/check-subtopic/{subtopicId}")
+    // ✅ NEW: Debug endpoint to check document structure
+    @GetMapping("/debug-document/{documentId}")
     @SuppressWarnings("unchecked")
-    public ResponseEntity<?> checkSubtopic(@PathVariable String subtopicId,
+    public ResponseEntity<?> debugDocument(@PathVariable String documentId,
                                           @RequestParam String subjectName) {
         try {
-            System.out.println("🔍 Checking subtopic: " + subtopicId + " in " + subjectName);
+            System.out.println("🔍 Debugging document: " + documentId + " in " + subjectName);
             
-            // Get all documents
-            List<Map<String, Object>> allDocuments = new ArrayList<>();
-            List<?> rawDocuments = mongoTemplate.findAll(Map.class, subjectName);
-            for (Object doc : rawDocuments) {
-                if (doc instanceof Map) {
-                    allDocuments.add((Map<String, Object>) doc);
+            // Try ObjectId first
+            Object doc = null;
+            if (ObjectId.isValid(documentId)) {
+                ObjectId objectId = new ObjectId(documentId);
+                doc = mongoTemplate.findById(objectId, Map.class, subjectName);
+            }
+            
+            // Try string _id if not found
+            if (doc == null) {
+                doc = mongoTemplate.findOne(
+                    Query.query(Criteria.where("_id").is(documentId)), 
+                    Map.class, 
+                    subjectName
+                );
+            }
+            
+            if (doc == null) {
+                return ResponseEntity.ok(Map.of(
+                    "found", false,
+                    "message", "Document not found",
+                    "documentId", documentId
+                ));
+            }
+            
+            Map<String, Object> document = (Map<String, Object>) doc;
+            
+            // Create simplified view of document structure
+            Map<String, Object> debugInfo = new HashMap<>();
+            debugInfo.put("_id", document.get("_id"));
+            debugInfo.put("name", document.get("name") != null ? document.get("name") : 
+                         document.get("unitName") != null ? document.get("unitName") : 
+                         document.get("title"));
+            
+            // Check for nested arrays
+            List<String> arrayFields = List.of("units", "subtopics", "children", "topics", "lessons");
+            List<Map<String, Object>> arraysInfo = new ArrayList<>();
+            
+            for (String field : arrayFields) {
+                if (document.containsKey(field) && document.get(field) instanceof List) {
+                    List<Map<String, Object>> items = (List<Map<String, Object>>) document.get(field);
+                    Map<String, Object> arrayInfo = new HashMap<>();
+                    arrayInfo.put("field", field);
+                    arrayInfo.put("count", items.size());
+                    
+                    // Get IDs of first few items
+                    List<String> sampleIds = new ArrayList<>();
+                    int limit = Math.min(items.size(), 3);
+                    for (int i = 0; i < limit; i++) {
+                        Map<String, Object> item = items.get(i);
+                        if (item.get("_id") != null) {
+                            sampleIds.add(item.get("_id").toString());
+                        } else if (item.get("id") != null) {
+                            sampleIds.add(item.get("id").toString());
+                        }
+                    }
+                    arrayInfo.put("sampleIds", sampleIds);
+                    
+                    arraysInfo.add(arrayInfo);
                 }
             }
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("found", false);
-            response.put("subtopicId", subtopicId);
-            response.put("collection", subjectName);
-            response.put("totalDocuments", allDocuments.size());
+            debugInfo.put("nestedArrays", arraysInfo);
+            debugInfo.put("hasAiVideoUrl", document.containsKey("aiVideoUrl"));
+            debugInfo.put("aiVideoUrl", document.get("aiVideoUrl"));
             
-            // Search recursively
-            for (Map<String, Object> document : allDocuments) {
-                String documentId = document.get("_id").toString();
-                
-                // Check if found in this document
-                Map<String, Object> foundInfo = findSubtopicRecursively(document, subtopicId, "", documentId);
-                if (foundInfo.get("found").equals(true)) {
-                    response.put("found", true);
-                    response.put("location", foundInfo.get("path"));
-                    response.put("documentId", documentId);
-                    response.put("document", createSanitizedDoc(document));
-                    break;
-                }
-            }
-            
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                "found", true,
+                "document", debugInfo
+            ));
             
         } catch (Exception e) {
-            System.err.println("❌ Check error: " + e.getMessage());
+            System.err.println("❌ Debug error: " + e.getMessage());
             return ResponseEntity.status(500).body(Map.of(
                 "error", e.getMessage(),
                 "found", false
             ));
         }
     }
-    
-    // ✅ NEW: Recursive search helper
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> findSubtopicRecursively(Map<String, Object> item, String targetId, String path, String documentId) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("found", false);
-        
-        // Check current item
-        String itemId = null;
-        if (item.get("_id") != null) itemId = item.get("_id").toString();
-        else if (item.get("id") != null) itemId = item.get("id").toString();
-        
-        if (targetId.equals(itemId) || targetId.equals(item.get("_id")) || targetId.equals(item.get("id"))) {
-            result.put("found", true);
-            result.put("path", path.isEmpty() ? "main_document" : path);
-            return result;
-        }
-        
-        // Search in nested arrays
-        List<String> arrayFields = new ArrayList<>();
-        arrayFields.add("units");
-        arrayFields.add("subtopics");
-        arrayFields.add("children");
-        
-        for (String field : arrayFields) {
-            if (item.containsKey(field) && item.get(field) instanceof List) {
-                List<Map<String, Object>> items = (List<Map<String, Object>>) item.get(field);
-                for (int i = 0; i < items.size(); i++) {
-                    Map<String, Object> nestedItem = items.get(i);
-                    String newPath = path.isEmpty() ? field + "[" + i + "]" : path + "." + field + "[" + i + "]";
-                    Map<String, Object> nestedResult = findSubtopicRecursively(nestedItem, targetId, newPath, documentId);
-                    if (nestedResult.get("found").equals(true)) {
-                        return nestedResult;
-                    }
-                }
-            }
-        }
-        
-        return result;
-    }
-    
-    // ✅ NEW: Create sanitized document
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> createSanitizedDoc(Map<String, Object> document) {
-        Map<String, Object> sanitized = new HashMap<>();
-        sanitized.put("_id", document.get("_id"));
-        sanitized.put("name", document.get("name") != null ? document.get("name") : 
-                       document.get("unitName") != null ? document.get("unitName") : 
-                       document.get("title"));
-        
-        // Check for arrays
-        List<String> arrayFields = new ArrayList<>();
-        arrayFields.add("units");
-        arrayFields.add("subtopics");
-        arrayFields.add("children");
-        
-        for (String field : arrayFields) {
-            if (document.containsKey(field) && document.get(field) instanceof List) {
-                List<Map<String, Object>> items = (List<Map<String, Object>>) document.get(field);
-                sanitized.put(field + "_count", items.size());
-                
-                // Sample first 2 items
-                List<Map<String, Object>> samples = new ArrayList<>();
-                int count = Math.min(items.size(), 2);
-                for (int i = 0; i < count; i++) {
-                    Map<String, Object> item = items.get(i);
-                    Map<String, Object> sample = new HashMap<>();
-                    sample.put("_id", item.get("_id"));
-                    sample.put("id", item.get("id"));
-                    sample.put("name", item.get("name") != null ? item.get("name") : 
-                              item.get("unitName") != null ? item.get("unitName") : 
-                              item.get("title"));
-                    samples.add(sample);
-                }
-                sanitized.put(field + "_samples", samples);
-            }
-        }
-        
-        return sanitized;
-    }
 
-    // Request DTO
+    // ✅ Request DTO
     public static class UpdateSubtopicRequest {
         private String subtopicId;
         private String aiVideoUrl;
