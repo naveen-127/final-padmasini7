@@ -1,4 +1,4 @@
-package com.padmasiniAdmin.padmasiniAdmin_1.manageUser;
+ package com.padmasiniAdmin.padmasiniAdmin_1.manageUser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,41 +21,32 @@ public class UserService {
     String collectionName = "users";
     
     public boolean saveNewUser(UserDTO user) {
-        // Check if user already exists
+        // Only check if email already exists
         if(!checkGmail(user.getUser().getGmail())) {
             UserModel userModel = user.getUser();
             
-            // Get role from user model
-            String role = userModel.getRole();
-            String courseName = userModel.getCourseName();
-            
             // AUTO-POPULATE subjects and standards based on course if empty
+            String courseName = userModel.getCourseName();
             if (courseName != null) {
                 // Check and populate subjects
                 if (userModel.getSubjects() == null || userModel.getSubjects().isEmpty()) {
-                    List<String> defaultSubjects = getDefaultSubjects(courseName, role);
+                    List<String> defaultSubjects = getDefaultSubjects(courseName);
                     userModel.setSubjects(defaultSubjects);
-                    System.out.println("Auto-populated subjects for " + courseName + " (role: " + role + "): " + defaultSubjects);
+                    System.out.println("Auto-populated subjects for " + courseName + ": " + defaultSubjects);
                 }
                 
                 // Check and populate standards
                 if (userModel.getStandards() == null || userModel.getStandards().isEmpty()) {
-                    List<String> defaultStandards = getDefaultStandards(courseName, role);
+                    List<String> defaultStandards = getDefaultStandards(courseName);
                     userModel.setStandards(defaultStandards);
-                    System.out.println("Auto-populated standards for " + courseName + " (role: " + role + "): " + defaultStandards);
+                    System.out.println("Auto-populated standards for " + courseName + ": " + defaultStandards);
                 }
             }
             
-            // Log the user being saved
-            System.out.println("Saving user:");
-            System.out.println("  Name: " + userModel.getUserName());
-            System.out.println("  Email: " + userModel.getGmail());
-            System.out.println("  Role: " + userModel.getRole());
-            System.out.println("  Course Type: " + userModel.getCoursetype());
-            System.out.println("  Course Name: " + userModel.getCourseName());
-            System.out.println("  Subjects: " + userModel.getSubjects());
-            System.out.println("  Standards: " + userModel.getStandards());
-            System.out.println("  Phone: " + userModel.getPhoneNumber());
+            System.out.println("Saving user with email: " + userModel.getGmail());
+            System.out.println("Course: " + userModel.getCourseName());
+            System.out.println("Subjects: " + userModel.getSubjects());
+            System.out.println("Standards: " + userModel.getStandards());
             
             MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbName);
             mongoTemplate.save(userModel, collectionName);
@@ -86,95 +77,48 @@ public class UserService {
         System.out.println("Deleted " + gmail);
     }
     
-    // Updated method to get default subjects based on course AND role
-    private List<String> getDefaultSubjects(String courseName, String role) {
+    // Helper method to get default subjects based on course
+    private List<String> getDefaultSubjects(String courseName) {
         if (courseName == null) return new ArrayList<>();
         
-        String courseLower = courseName.toLowerCase();
-        
-        // Teacher-specific subjects
-        if ("teacher".equalsIgnoreCase(role)) {
-            switch (courseLower) {
-                case "neet":
-                    return Arrays.asList("Physics", "Chemistry", "Botany", "Zoology");
-                case "jee":
-                    return Arrays.asList("Physics", "Chemistry", "Maths");
-                case "class11":
-                    return Arrays.asList("Physics", "Chemistry", "Biology", "Mathematics");
-                case "class12":
-                    return Arrays.asList("Physics", "Chemistry", "Biology", "Mathematics");
-                default:
-                    return new ArrayList<>();
-            }
-        } 
-        // Student-specific subjects
-        else {
-            switch (courseLower) {
-                case "neet":
-                    return Arrays.asList("Physics", "Chemistry", "Zoology", "Botany");
-                case "jee":
-                    return Arrays.asList("Physics", "Chemistry", "Maths");
-                case "class1-5":
-                    return Arrays.asList("English", "Maths", "Science");
-                case "class6-12":
-                    return Arrays.asList("Physics", "Chemistry", "Maths", "Biology");
-                case "kindergarten":
-                    return Arrays.asList("ABCs", "Numbers", "Shapes");
-                default:
-                    return new ArrayList<>();
-            }
+        switch (courseName.toLowerCase()) {
+            case "neet":
+                return Arrays.asList("Physics", "Chemistry", "Zoology", "Botany");
+            case "jee":
+                return Arrays.asList("Physics", "Chemistry", "Maths");
+            case "class1-5":
+                return Arrays.asList("English", "Maths", "Science");
+            case "class6-12":
+                return Arrays.asList("Physics", "Chemistry", "Maths", "Biology");
+            case "kindergarten":
+                return Arrays.asList("ABCs", "Numbers", "Shapes");
+            default:
+                // Return empty list for unknown courses
+                return new ArrayList<>();
         }
     }
     
-    // Updated method to get default standards based on course AND role
-    private List<String> getDefaultStandards(String courseName, String role) {
+    // Helper method to get default standards based on course
+    private List<String> getDefaultStandards(String courseName) {
         if (courseName == null) return new ArrayList<>();
         
-        String courseLower = courseName.toLowerCase();
-        
-        // Teacher-specific standards
-        if ("teacher".equalsIgnoreCase(role)) {
-            switch (courseLower) {
-                case "neet":
-                case "jee":
-                    return Arrays.asList("11", "12");
-                case "class11":
-                    return Arrays.asList("11");
-                case "class12":
-                    return Arrays.asList("12");
-                default:
-                    return new ArrayList<>();
-            }
-        } 
-        // Student-specific standards
-        else {
-            switch (courseLower) {
-                case "neet":
-                case "jee":
-                    return Arrays.asList("11", "12");
-                case "class1-5":
-                    return Arrays.asList("1", "2", "3", "4", "5");
-                case "class6-12":
-                    return Arrays.asList("6", "7", "8", "9", "10", "11", "12");
-                case "kindergarten":
-                    return Arrays.asList("KG");
-                default:
-                    return new ArrayList<>();
-            }
+        switch (courseName.toLowerCase()) {
+            case "neet":
+            case "jee":
+                return Arrays.asList("11", "12");
+            case "class1-5":
+                return Arrays.asList("1", "2", "3", "4", "5");
+            case "class6-12":
+                return Arrays.asList("6", "7", "8", "9", "10", "11", "12");
+            case "kindergarten":
+                return Arrays.asList("KG");
+            default:
+                // Return empty list for unknown courses
+                return new ArrayList<>();
         }
     }
     
-    // Public method to get default subjects (updated with role parameter)
-    public List<String> getDefaultSubjectsPublic(String courseName, String role) {
-        return getDefaultSubjects(courseName, role);
-    }
-    
-    // Public method to get default standards (updated with role parameter)
-    public List<String> getDefaultStandardsPublic(String courseName, String role) {
-        return getDefaultStandards(courseName, role);
-    }
-    
-    // Updated migration method
+    // Public method to update existing users (for migration)
     public void migrateExistingUsers() {
         try {
             MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbName);
@@ -184,29 +128,21 @@ public class UserService {
             for (UserModel user : allUsers) {
                 boolean needsUpdate = false;
                 String courseName = user.getCourseName();
-                String role = user.getRole() != null ? user.getRole() : "student"; // Default to student if role is null
                 
                 // Update subjects if empty
                 if (courseName != null && (user.getSubjects() == null || user.getSubjects().isEmpty())) {
-                    List<String> defaultSubjects = getDefaultSubjects(courseName, role);
+                    List<String> defaultSubjects = getDefaultSubjects(courseName);
                     user.setSubjects(defaultSubjects);
                     needsUpdate = true;
-                    System.out.println("Setting default subjects for " + user.getGmail() + " (role: " + role + "): " + defaultSubjects);
+                    System.out.println("Setting default subjects for " + user.getGmail() + ": " + defaultSubjects);
                 }
                 
                 // Update standards if empty
                 if (courseName != null && (user.getStandards() == null || user.getStandards().isEmpty())) {
-                    List<String> defaultStandards = getDefaultStandards(courseName, role);
+                    List<String> defaultStandards = getDefaultStandards(courseName);
                     user.setStandards(defaultStandards);
                     needsUpdate = true;
-                    System.out.println("Setting default standards for " + user.getGmail() + " (role: " + role + "): " + defaultStandards);
-                }
-                
-                // Update role for existing users if not set
-                if (user.getRole() == null || user.getRole().isEmpty()) {
-                    user.setRole("student");
-                    needsUpdate = true;
-                    System.out.println("Setting default role for " + user.getGmail() + ": student");
+                    System.out.println("Setting default standards for " + user.getGmail() + ": " + defaultStandards);
                 }
                 
                 if (needsUpdate) {
@@ -220,5 +156,15 @@ public class UserService {
             System.err.println("Error during migration: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+    
+    // Public method to get default subjects (can be used by controller if needed)
+    public List<String> getDefaultSubjectsPublic(String courseName) {
+        return getDefaultSubjects(courseName);
+    }
+    
+    // Public method to get default standards (can be used by controller if needed)
+    public List<String> getDefaultStandardsPublic(String courseName) {
+        return getDefaultStandards(courseName);
     }
 }
