@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mongodb.client.MongoClient;
+import com.mongodb.client.result.DeleteResult;
 
 @RestController
 @RequestMapping("/api")
@@ -145,64 +149,89 @@ public class UserController {
     @GetMapping("/getAllStudents")
     public ResponseEntity<?> getAllStudents() {
         try {
-            MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, "studentUsers");
+            System.out.println("=== GET ALL STUDENTS CALLED ===");
             
-            // Query the CORRECT collection for students
-            Query query = new Query();
+            String[][] possibleLocations = {
+                {"studentUsers", "studentUserDetail"},
+                {"studentUsers", "studentUsers"},
+                {"users", "studentUserDetail"},
+                {"users", "studentUsers"}
+            };
             
-            // Try different collections - students might be in "studentUserDetail" collection
-            List<Document> students = new ArrayList<>();
+            List<Map<String, Object>> allStudents = new ArrayList<>();
             
-            // Try studentUserDetail collection first
-            if (mongoTemplate.collectionExists("studentUserDetail")) {
-                System.out.println("Found studentUserDetail collection");
-                students = mongoTemplate.findAll(Document.class, "studentUserDetail");
-            } 
-            // Fallback to users collection with firstname filter
-            else if (mongoTemplate.collectionExists("studentUsers")) {
-                System.out.println("Using users collection with firstname filter");
-                query.addCriteria(Criteria.where("firstname").exists(true));
-                students = mongoTemplate.find(query, Document.class, "studentUsers");
-            }
-            
-            System.out.println("Retrieved " + students.size() + " students from database");
-            
-            // Convert to a simpler structure for frontend
-            List<Map<String, Object>> studentList = new ArrayList<>();
-            
-            for (Document student : students) {
-                Map<String, Object> studentData = new HashMap<>();
+            for (String[] location : possibleLocations) {
+                String dbName = location[0];
+                String collectionName = location[1];
                 
-                // Extract data from Document
-                studentData.put("id", student.getObjectId("_id").toString());
-                studentData.put("firstname", student.getString("firstname"));
-                studentData.put("lastname", student.getString("lastname"));
-                studentData.put("fullName", student.getString("firstname") + " " + 
-                              (student.getString("lastname") != null ? student.getString("lastname") : ""));
-                studentData.put("email", student.getString("email"));
-                studentData.put("mobile", student.getString("mobile"));
-                studentData.put("password", student.getString("password"));
-                studentData.put("dob", student.getString("dob"));
-                studentData.put("gender", student.getString("gender"));
-                studentData.put("role", "student");
-                
-                // Course info - handle as Document
-                if (student.get("selectedCourse") != null) {
-                    studentData.put("selectedCourse", student.get("selectedCourse"));
+                try {
+                    MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbName);
+                    
+                    if (mongoTemplate.collectionExists(collectionName)) {
+                        System.out.println("Checking: " + dbName + "." + collectionName);
+                        
+                        // Get all documents
+                        List<Document> documents = mongoTemplate.findAll(Document.class, collectionName);
+                        
+                        for (Document doc : documents) {
+                            // Check if it's a student document
+                            if (isStudentDocument(doc)) {
+                                Map<String, Object> studentData = new HashMap<>();
+                                
+                                // Get ObjectId properly
+                                ObjectId objectId = doc.getObjectId("_id");
+                                if (objectId != null) {
+                                    studentData.put("id", objectId.toString());
+                                } else {
+                                    // Fallback to other ID
+                                    studentData.put("id", doc.get("_id") != null ? doc.get("_id").toString() : UUID.randomUUID().toString());
+                                }
+                                
+                                // Map fields
+                                studentData.put("firstname", doc.getString("firstname"));
+                                studentData.put("lastname", doc.getString("lastname"));
+                                studentData.put("fullName", (doc.getString("firstname") != null ? doc.getString("firstname") : "") + 
+                                              " " + (doc.getString("lastname") != null ? doc.getString("lastname") : ""));
+                                studentData.put("email", doc.getString("email"));
+                                studentData.put("mobile", doc.getString("mobile"));
+                                studentData.put("phone", doc.getString("phone"));
+                                studentData.put("password", doc.getString("password"));
+                                studentData.put("dob", doc.getString("dob"));
+                                studentData.put("gender", doc.getString("gender"));
+                                studentData.put("role", "student");
+                                
+                                // Course info
+                                if (doc.get("selectedCourse") != null) {
+                                    studentData.put("selectedCourse", doc.get("selectedCourse"));
+                                }
+                                
+                                // Standards and subjects
+                                studentData.put("standards", doc.get("standards") != null ? 
+                                              doc.get("standards") : new ArrayList<>());
+                                studentData.put("subjects", doc.get("subjects") != null ? 
+                                              doc.get("subjects") : new ArrayList<>());
+                                studentData.put("selectedStandard", doc.get("selectedStandard") != null ? 
+                                              doc.get("selectedStandard") : new ArrayList<>());
+                                
+                                // Add source info for debugging
+                                studentData.put("_source", dbName + "." + collectionName);
+                                
+                                allStudents.add(studentData);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("Error accessing " + dbName + "." + collectionName + ": " + e.getMessage());
                 }
-                
-                // Standards and subjects
-                studentData.put("standards", student.get("standards") != null ? 
-                              student.get("standards") : new ArrayList<>());
-                studentData.put("subjects", student.get("subjects") != null ? 
-                              student.get("subjects") : new ArrayList<>());
-                studentData.put("selectedStandard", student.get("selectedStandard") != null ? 
-                              student.get("selectedStandard") : new ArrayList<>());
-                
-                studentList.add(studentData);
             }
             
-            return ResponseEntity.ok(studentList);
+            System.out.println("Total students found: " + allStudents.size());
+            for (Map<String, Object> student : allStudents) {
+                System.out.println("Student: " + student.get("firstname") + " | ID: " + student.get("id") + " | Email: " + student.get("email"));
+            }
+            
+            return ResponseEntity.ok(allStudents);
+            
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("status", "error");
@@ -210,5 +239,117 @@ public class UserController {
             e.printStackTrace();
             return ResponseEntity.status(500).body(error);
         }
+    }
+    
+    @DeleteMapping("/deleteStudent/{id}")
+    public ResponseEntity<?> deleteStudent(@PathVariable("id") String id) {
+        System.out.println("=== DELETE STUDENT CALLED ===");
+        System.out.println("Student ID to delete: " + id);
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // List of possible database/collection combinations for students
+            String[][] possibleLocations = {
+                {"studentUsers", "studentUserDetail"},
+                {"studentUsers", "studentUsers"},
+                {"users", "studentUserDetail"},
+                {"users", "studentUsers"}
+            };
+            
+            boolean deleted = false;
+            String deletedFrom = "";
+            
+            // Try each possible location
+            for (String[] location : possibleLocations) {
+                String dbName = location[0];
+                String collectionName = location[1];
+                
+                try {
+                    MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbName);
+                    
+                    if (mongoTemplate.collectionExists(collectionName)) {
+                        // Try to delete by ObjectId
+                        Query query = new Query(Criteria.where("_id").is(new ObjectId(id)));
+                        
+                        // If ObjectId fails, try by email or other fields
+                        if (mongoTemplate.exists(query, Document.class, collectionName)) {
+                            DeleteResult result = mongoTemplate.remove(query, collectionName);
+                            if (result.getDeletedCount() > 0) {
+                                deleted = true;
+                                deletedFrom = dbName + "." + collectionName;
+                                System.out.println("Deleted student from: " + deletedFrom);
+                                break;
+                            }
+                        }
+                        
+                        // Also try deleting by email field (if ID is actually email)
+                        Query emailQuery = new Query(Criteria.where("email").is(id));
+                        if (mongoTemplate.exists(emailQuery, Document.class, collectionName)) {
+                            DeleteResult result = mongoTemplate.remove(emailQuery, collectionName);
+                            if (result.getDeletedCount() > 0) {
+                                deleted = true;
+                                deletedFrom = dbName + "." + collectionName;
+                                System.out.println("Deleted student by email from: " + deletedFrom);
+                                break;
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("Error trying " + dbName + "." + collectionName + ": " + e.getMessage());
+                }
+            }
+            
+            if (deleted) {
+                response.put("status", "pass");
+                response.put("message", "Student deleted successfully from " + deletedFrom);
+            } else {
+                response.put("status", "failed");
+                response.put("message", "Student not found in any known collection");
+                
+                // Try one more approach: check all collections
+                System.out.println("Trying exhaustive search...");
+                for (String dbName : mongoClient.listDatabaseNames()) {
+                    try {
+                        MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbName);
+                        Set<String> collections = mongoTemplate.getCollectionNames();
+                        
+                        for (String collection : collections) {
+                            Query query = new Query(new Criteria().orOperator(
+                                Criteria.where("_id").is(id),
+                                Criteria.where("email").is(id),
+                                Criteria.where("gmail").is(id)
+                            ));
+                            
+                            if (mongoTemplate.exists(query, Document.class, collection)) {
+                                mongoTemplate.remove(query, collection);
+                                response.put("status", "pass");
+                                response.put("message", "Student deleted from " + dbName + "." + collection);
+                                System.out.println("Found and deleted from " + dbName + "." + collection);
+                                return ResponseEntity.ok(response);
+                            }
+                        }
+                    } catch (Exception e) {
+                        System.out.println("Error checking " + dbName + ": " + e.getMessage());
+                    }
+                }
+            }
+            
+        } catch (Exception e) {
+            System.out.println("Error deleting student: " + e.getMessage());
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "Error deleting student: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+        
+        return ResponseEntity.ok(response);
+    }
+
+    // Helper method to check if a document is a student
+    private boolean isStudentDocument(Document doc) {
+        return doc.containsKey("firstname") || 
+               doc.containsKey("email") || 
+               (doc.containsKey("role") && "student".equalsIgnoreCase(doc.getString("role")));
     }
 }
