@@ -18,7 +18,7 @@ import com.padmasiniAdmin.padmasiniAdmin_1.service.studentService.StudentDataSer
 
 
 @RestController
-@RequestMapping("/api")
+// @RequestMapping("/api")
 public class UnitDataController {
 	
 	@Autowired
