@@ -14,8 +14,35 @@ public class Unit {
     private String unitName;
     private String parentId;     // Links back to the parent unit
     private String explanation;
+    private String description;        // Regular description
+    private String customDescription;  // AI-generated custom description
+    private Integer order; 
 
-    // ✅ Multimedia (URLs stored, not files)
+    public Integer getOrder() {
+		return order;
+	}
+
+	public void setOrder(Integer order) {
+		this.order = order;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public String getCustomDescription() {
+		return customDescription;
+	}
+
+	public void setCustomDescription(String customDescription) {
+		this.customDescription = customDescription;
+	}
+
+	// ✅ Multimedia (URLs stored, not files)
     private List<String> audioFileId = new ArrayList<>();
     private List<String> imageUrls = new ArrayList<>();
     private String aiVideoUrl;
