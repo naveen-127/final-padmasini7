@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.padmasiniAdmin.padmasiniAdmin_1.model.UnitRequest;
@@ -18,7 +19,7 @@ import com.padmasiniAdmin.padmasiniAdmin_1.service.studentService.StudentDataSer
 
 
 @RestController
-// @RequestMapping("/api")
+@RequestMapping("/api")
 public class UnitDataController {
 	
 	@Autowired
