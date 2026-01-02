@@ -145,7 +145,7 @@ public class UserController {
     @GetMapping("/getAllStudents")
     public ResponseEntity<?> getAllStudents() {
         try {
-            MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, "users");
+            MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, "studentUsers");
             
             // Query the CORRECT collection for students
             Query query = new Query();
@@ -159,10 +159,10 @@ public class UserController {
                 students = mongoTemplate.findAll(Document.class, "studentUserDetail");
             } 
             // Fallback to users collection with firstname filter
-            else if (mongoTemplate.collectionExists("users")) {
+            else if (mongoTemplate.collectionExists("studentUsers")) {
                 System.out.println("Using users collection with firstname filter");
                 query.addCriteria(Criteria.where("firstname").exists(true));
-                students = mongoTemplate.find(query, Document.class, "users");
+                students = mongoTemplate.find(query, Document.class, "studentUsers");
             }
             
             System.out.println("Retrieved " + students.size() + " students from database");
