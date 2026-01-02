@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class UserModel implements Serializable {
 	private static final long serialVersionUID = 1L;//suma
@@ -16,7 +17,133 @@ private String courseName;
 private List<String>standards=new ArrayList<String>();
 private List<String> subjects=new ArrayList<String>();
 private String phoneNumber;
+private String id;
+private String firstname;
+private String lastname;
+private String email;
+private String mobile;
+private String dob;
+private String gender;
+private String plan;
+private String startDate;
+private String endDate;
+private String paymentId;
+private String paymentMethod;
+private String amountPaid;
+private String payerId;
+private Integer comfortableDailyHours;
+private String severity;
+private List<String> selectedStandard;
+private Map<String, Object> selectedCourse;
 
+
+public String getPlan() {
+	return plan;
+}
+
+public void setPlan(String plan) {
+	this.plan = plan;
+}
+
+public String getStartDate() {
+	return startDate;
+}
+
+public void setStartDate(String startDate) {
+	this.startDate = startDate;
+}
+
+public String getEndDate() {
+	return endDate;
+}
+
+public void setEndDate(String endDate) {
+	this.endDate = endDate;
+}
+
+public String getPaymentId() {
+	return paymentId;
+}
+
+public void setPaymentId(String paymentId) {
+	this.paymentId = paymentId;
+}
+
+public String getPaymentMethod() {
+	return paymentMethod;
+}
+
+public void setPaymentMethod(String paymentMethod) {
+	this.paymentMethod = paymentMethod;
+}
+
+public String getAmountPaid() {
+	return amountPaid;
+}
+
+public void setAmountPaid(String amountPaid) {
+	this.amountPaid = amountPaid;
+}
+
+public String getPayerId() {
+	return payerId;
+}
+
+public void setPayerId(String payerId) {
+	this.payerId = payerId;
+}
+
+public Integer getComfortableDailyHours() {
+	return comfortableDailyHours;
+}
+
+public void setComfortableDailyHours(Integer comfortableDailyHours) {
+	this.comfortableDailyHours = comfortableDailyHours;
+}
+
+public String getSeverity() {
+	return severity;
+}
+
+public void setSeverity(String severity) {
+	this.severity = severity;
+}
+
+public void setId(String id) {
+	this.id = id;
+}
+
+public void setFirstname(String firstname) {
+	this.firstname = firstname;
+}
+
+public void setLastname(String lastname) {
+	this.lastname = lastname;
+}
+
+public void setEmail(String email) {
+	this.email = email;
+}
+
+public void setMobile(String mobile) {
+	this.mobile = mobile;
+}
+
+public void setDob(String dob) {
+	this.dob = dob;
+}
+
+public void setGender(String gender) {
+	this.gender = gender;
+}
+
+public void setSelectedStandard(List<String> selectedStandard) {
+	this.selectedStandard = selectedStandard;
+}
+
+public void setSelectedCourse(Map<String, Object> selectedCourse) {
+	this.selectedCourse = selectedCourse;
+}
 
 public String getPhoneNumber() {
 	return phoneNumber;
@@ -90,6 +217,51 @@ public void setSubjects(List<String> subjects) {
 
 public static long getSerialversionuid() {
 	return serialVersionUID;
+}
+
+public Object getId() {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+public Object getFirstname() {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+public Object getLastname() {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+public Object getEmail() {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+public Object getMobile() {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+public Object getDob() {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+public Object getGender() {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+public Object getSelectedCourse() {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+public Object getSelectedStandard() {
+	// TODO Auto-generated method stub
+	return null;
 }
 
 
