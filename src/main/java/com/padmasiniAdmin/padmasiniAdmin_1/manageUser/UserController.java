@@ -149,89 +149,54 @@ public class UserController {
     @GetMapping("/getAllStudents")
     public ResponseEntity<?> getAllStudents() {
         try {
-            System.out.println("=== GET ALL STUDENTS CALLED ===");
+            // Connect to the correct database for students
+            MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, "studentUsers");
             
-            String[][] possibleLocations = {
-                {"studentUsers", "studentUserDetail"},
-                {"studentUsers", "studentUsers"},
-                {"users", "studentUserDetail"},
-                {"users", "studentUsers"}
-            };
+            // First check the studentUserDetail collection (where your student data is)
+            Query query = new Query();
+            List<UserModel> students = mongoTemplate.find(query, UserModel.class, "studentUserDetail");
             
-            List<Map<String, Object>> allStudents = new ArrayList<>();
+            System.out.println("Retrieved " + students.size() + " students from studentUserDetail collection");
             
-            for (String[] location : possibleLocations) {
-                String dbName = location[0];
-                String collectionName = location[1];
+            // Convert to response format
+            List<Map<String, Object>> studentList = new ArrayList<>();
+            
+            for (UserModel student : students) {
+                Map<String, Object> studentData = new HashMap<>();
                 
-                try {
-                    MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbName);
-                    
-                    if (mongoTemplate.collectionExists(collectionName)) {
-                        System.out.println("Checking: " + dbName + "." + collectionName);
-                        
-                        // Get all documents
-                        List<Document> documents = mongoTemplate.findAll(Document.class, collectionName);
-                        
-                        for (Document doc : documents) {
-                            // Check if it's a student document
-                            if (isStudentDocument(doc)) {
-                                Map<String, Object> studentData = new HashMap<>();
-                                
-                                // Get ObjectId properly
-                                ObjectId objectId = doc.getObjectId("_id");
-                                if (objectId != null) {
-                                    studentData.put("id", objectId.toString());
-                                } else {
-                                    // Fallback to other ID
-                                    studentData.put("id", doc.get("_id") != null ? doc.get("_id").toString() : UUID.randomUUID().toString());
-                                }
-                                
-                                // Map fields
-                                studentData.put("firstname", doc.getString("firstname"));
-                                studentData.put("lastname", doc.getString("lastname"));
-                                studentData.put("fullName", (doc.getString("firstname") != null ? doc.getString("firstname") : "") + 
-                                              " " + (doc.getString("lastname") != null ? doc.getString("lastname") : ""));
-                                studentData.put("email", doc.getString("email"));
-                                studentData.put("mobile", doc.getString("mobile"));
-                                studentData.put("phone", doc.getString("phone"));
-                                studentData.put("password", doc.getString("password"));
-                                studentData.put("dob", doc.getString("dob"));
-                                studentData.put("gender", doc.getString("gender"));
-                                studentData.put("role", "student");
-                                
-                                // Course info
-                                if (doc.get("selectedCourse") != null) {
-                                    studentData.put("selectedCourse", doc.get("selectedCourse"));
-                                }
-                                
-                                // Standards and subjects
-                                studentData.put("standards", doc.get("standards") != null ? 
-                                              doc.get("standards") : new ArrayList<>());
-                                studentData.put("subjects", doc.get("subjects") != null ? 
-                                              doc.get("subjects") : new ArrayList<>());
-                                studentData.put("selectedStandard", doc.get("selectedStandard") != null ? 
-                                              doc.get("selectedStandard") : new ArrayList<>());
-                                
-                                // Add source info for debugging
-                                studentData.put("_source", dbName + "." + collectionName);
-                                
-                                allStudents.add(studentData);
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    System.out.println("Error accessing " + dbName + "." + collectionName + ": " + e.getMessage());
+                // Extract data from UserModel
+                studentData.put("id", student.getId() != null ? student.getId().toString() : "");
+                studentData.put("firstname", student.getFirstname());
+                studentData.put("lastname", student.getLastname());
+                studentData.put("fullName", (student.getFirstname() != null ? student.getFirstname() : "") + " " + 
+                              (student.getLastname() != null ? student.getLastname() : ""));
+                studentData.put("email", student.getEmail() != null ? student.getEmail() : student.getGmail());
+                studentData.put("mobile", student.getMobile() != null ? student.getMobile() : student.getPhoneNumber());
+                studentData.put("password", student.getPassword());
+                studentData.put("dob", student.getDob());
+                studentData.put("gender", student.getGender());
+                studentData.put("role", "student");
+                
+                // Course info
+                if (student.getSelectedCourse() != null) {
+                    Map<String, Object> courseInfo = new HashMap<>();
+                    courseInfo.put("type", student.getCoursetype());
+                    courseInfo.put("name", student.getCourseName());
+                    studentData.put("selectedCourse", courseInfo);
                 }
+                
+                // Standards and subjects
+                studentData.put("standards", student.getStandards() != null ? 
+                              student.getStandards() : new ArrayList<>());
+                studentData.put("subjects", student.getSubjects() != null ? 
+                              student.getSubjects() : new ArrayList<>());
+                studentData.put("selectedStandard", student.getSelectedStandard() != null ? 
+                              student.getSelectedStandard() : new ArrayList<>());
+                
+                studentList.add(studentData);
             }
             
-            System.out.println("Total students found: " + allStudents.size());
-            for (Map<String, Object> student : allStudents) {
-                System.out.println("Student: " + student.get("firstname") + " | ID: " + student.get("id") + " | Email: " + student.get("email"));
-            }
-            
-            return ResponseEntity.ok(allStudents);
-            
+            return ResponseEntity.ok(studentList);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("status", "error");
