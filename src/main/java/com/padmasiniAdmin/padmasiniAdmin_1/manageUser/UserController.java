@@ -149,58 +149,63 @@ public class UserController {
     @GetMapping("/getAllStudents")
     public ResponseEntity<?> getAllStudents() {
         try {
-            // Connect to the correct database for students
             MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, "studentUsers");
             
-            // First check the studentUserDetail collection (where your student data is)
+            // Query using Document class instead of UserModel
             Query query = new Query();
-            List<UserModel> students = mongoTemplate.find(query, UserModel.class, "studentUserDetail");
+            List<Document> students = mongoTemplate.find(query, Document.class, "studentUserDetail");
             
-            System.out.println("Retrieved " + students.size() + " students from studentUserDetail collection");
+            System.out.println("Retrieved " + students.size() + " students");
             
-            // Convert to response format
+            // Convert to List of Maps
             List<Map<String, Object>> studentList = new ArrayList<>();
             
-            for (UserModel student : students) {
+            for (Document student : students) {
                 Map<String, Object> studentData = new HashMap<>();
                 
-                // Extract data from UserModel
-                studentData.put("id", student.getId() != null ? student.getId().toString() : "");
-                studentData.put("firstname", student.getFirstname());
-                studentData.put("lastname", student.getLastname());
-                studentData.put("fullName", (student.getFirstname() != null ? student.getFirstname() : "") + " " + 
-                              (student.getLastname() != null ? student.getLastname() : ""));
-                studentData.put("email", student.getEmail() != null ? student.getEmail() : student.getGmail());
-                studentData.put("mobile", student.getMobile() != null ? student.getMobile() : student.getPhoneNumber());
-                studentData.put("password", student.getPassword());
-                studentData.put("dob", student.getDob());
-                studentData.put("gender", student.getGender());
-                studentData.put("role", "student");
-                
-                // Course info
-                if (student.getSelectedCourse() != null) {
-                    Map<String, Object> courseInfo = new HashMap<>();
-                    courseInfo.put("type", student.getCoursetype());
-                    courseInfo.put("name", student.getCourseName());
-                    studentData.put("selectedCourse", courseInfo);
+                // Get ObjectId properly
+                ObjectId objectId = student.getObjectId("_id");
+                if (objectId != null) {
+                    studentData.put("id", objectId.toString());
                 }
                 
-                // Standards and subjects
-                studentData.put("standards", student.getStandards() != null ? 
-                              student.getStandards() : new ArrayList<>());
-                studentData.put("subjects", student.getSubjects() != null ? 
-                              student.getSubjects() : new ArrayList<>());
-                studentData.put("selectedStandard", student.getSelectedStandard() != null ? 
-                              student.getSelectedStandard() : new ArrayList<>());
+                // Map all fields directly
+                studentData.put("firstname", student.getString("firstname"));
+                studentData.put("lastname", student.getString("lastname"));
+                studentData.put("email", student.getString("email"));
+                studentData.put("mobile", student.getString("mobile"));
+                studentData.put("password", student.getString("password"));
+                studentData.put("dob", student.getString("dob"));
+                studentData.put("gender", student.getString("gender"));
+                studentData.put("role", "student");
+                
+                // Full name
+                String fullName = (student.getString("firstname") != null ? student.getString("firstname") : "") + " " + 
+                                 (student.getString("lastname") != null ? student.getString("lastname") : "");
+                studentData.put("fullName", fullName.trim());
+                
+                // Course info
+                if (student.get("selectedCourse") != null) {
+                    studentData.put("selectedCourse", student.get("selectedCourse"));
+                }
+                
+                // Handle arrays/lists
+                studentData.put("selectedStandard", student.get("selectedStandard") != null ? 
+                              student.get("selectedStandard") : new ArrayList<>());
+                studentData.put("subjects", student.get("subjects") != null ? 
+                              student.get("subjects") : new ArrayList<>());
+                studentData.put("standards", student.get("standards") != null ? 
+                              student.get("standards") : new ArrayList<>());
                 
                 studentList.add(studentData);
             }
             
             return ResponseEntity.ok(studentList);
+            
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
             error.put("status", "error");
-            error.put("message", e.getMessage());
+            error.put("message", "Error fetching students: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(500).body(error);
         }
