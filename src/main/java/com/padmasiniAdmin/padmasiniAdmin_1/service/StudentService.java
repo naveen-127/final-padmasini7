@@ -5,7 +5,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
-
+import com.mongodb.client.MongoClient; 
 import com.mongodb.client.result.DeleteResult;
 
 import java.util.List;
