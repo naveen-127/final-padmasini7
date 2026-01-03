@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -26,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.result.DeleteResult;
+import com.padmasiniAdmin.padmasiniAdmin_1.service.StudentService; // Correct import
 
 @RestController
 @RequestMapping("/api")
@@ -37,6 +36,9 @@ public class UserController {
     
     @Autowired 
     private MongoClient mongoClient;
+    
+    @Autowired  // This is needed if you want to use StudentService
+    private StudentService studentService; // Make sure this is properly autowired
     
     @PostMapping("/newUser")
     public ResponseEntity<?> addNewUser(@RequestBody UserDTO user) {
@@ -145,75 +147,89 @@ public class UserController {
             return ResponseEntity.status(500).body(error);
         }
     }
-
+    
     @GetMapping("/getAllStudents")
     public ResponseEntity<?> getAllStudents() {
         try {
-            List<StudentModel> students = studentService.getAllStudents();
-            System.out.println("Retrieved " + students.size() + " students");
+            // Direct approach without StudentService
+            MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, "studentUsers");
             
-            // Convert to response format
+            // Get all documents from studentUserDetail collection
+            Query query = new Query();
+            List<Document> documents = mongoTemplate.find(query, Document.class, "studentUserDetail");
+            
+            System.out.println("Found " + documents.size() + " student documents");
+            
+            // Convert documents to response format
             List<Map<String, Object>> studentList = new ArrayList<>();
             
-            for (StudentModel student : students) {
+            for (Document doc : documents) {
                 Map<String, Object> studentData = new HashMap<>();
                 
-                studentData.put("_id", student.getId());
-                studentData.put("id", student.getId());
-                studentData.put("firstname", student.getFirstname());
-                studentData.put("lastname", student.getLastname());
-                studentData.put("fullName", student.getFirstname() + " " + student.getLastname());
-                studentData.put("email", student.getEmail());
-                studentData.put("phone", student.getMobile());
-                studentData.put("mobile", student.getMobile());
-                studentData.put("password", student.getPassword());
-                studentData.put("dob", student.getDob());
-                studentData.put("gender", student.getGender());
+                // Extract _id
+                if (doc.get("_id") != null && doc.get("_id") instanceof ObjectId) {
+                    ObjectId objectId = (ObjectId) doc.get("_id");
+                    studentData.put("_id", objectId.toString());
+                    studentData.put("id", objectId.toString());
+                }
+                
+                // Extract all fields
+                studentData.put("firstname", doc.getString("firstname"));
+                studentData.put("lastname", doc.getString("lastname"));
+                
+                // Create fullName
+                String firstname = doc.getString("firstname") != null ? doc.getString("firstname") : "";
+                String lastname = doc.getString("lastname") != null ? doc.getString("lastname") : "";
+                studentData.put("fullName", firstname + " " + lastname);
+                
+                studentData.put("email", doc.getString("email"));
+                studentData.put("phone", doc.getString("mobile"));
+                studentData.put("mobile", doc.getString("mobile"));
+                studentData.put("password", doc.getString("password"));
+                studentData.put("dob", doc.getString("dob"));
+                studentData.put("gender", doc.getString("gender"));
                 studentData.put("role", "student");
+                studentData.put("coursetype", doc.getString("coursetype"));
+                studentData.put("courseName", doc.getString("courseName"));
                 
-                // Course info
-                Map<String, Object> courseInfo = new HashMap<>();
-                courseInfo.put("type", student.getCoursetype());
-                courseInfo.put("name", student.getCourseName());
-                studentData.put("selectedCourse", courseInfo);
+                // Add other fields if they exist
+                if (doc.containsKey("plan")) studentData.put("plan", doc.getString("plan"));
+                if (doc.containsKey("startDate")) studentData.put("startDate", doc.getString("startDate"));
+                if (doc.containsKey("endDate")) studentData.put("endDate", doc.getString("endDate"));
+                if (doc.containsKey("paymentId")) studentData.put("paymentId", doc.getString("paymentId"));
+                if (doc.containsKey("paymentMethod")) studentData.put("paymentMethod", doc.getString("paymentMethod"));
+                if (doc.containsKey("amountPaid")) studentData.put("amountPaid", doc.getString("amountPaid"));
+                if (doc.containsKey("payerId")) studentData.put("payerId", doc.getString("payerId"));
+                if (doc.containsKey("comfortableDailyHours")) studentData.put("comfortableDailyHours", doc.getInteger("comfortableDailyHours"));
+                if (doc.containsKey("severity")) studentData.put("severity", doc.getString("severity"));
                 
-                // Standards
-                studentData.put("standards", student.getStandards());
-                studentData.put("selectedStandard", student.getSelectedStandard());
-                
-                // Subjects
-                studentData.put("subjects", student.getSubjects());
-                
-                // Other fields
-                studentData.put("coursetype", student.getCoursetype());
-                studentData.put("courseName", student.getCourseName());
-                studentData.put("plan", student.getPlan());
-                studentData.put("startDate", student.getStartDate());
-                studentData.put("endDate", student.getEndDate());
-                studentData.put("paymentId", student.getPaymentId());
-                studentData.put("paymentMethod", student.getPaymentMethod());
-                studentData.put("amountPaid", student.getAmountPaid());
-                studentData.put("payerId", student.getPayerId());
-                studentData.put("comfortableDailyHours", student.getComfortableDailyHours());
-                studentData.put("severity", student.getSeverity());
+                // Lists
+                studentData.put("standards", doc.get("standards"));
+                studentData.put("selectedStandard", doc.get("selectedStandard"));
+                studentData.put("subjects", doc.get("subjects"));
+                studentData.put("selectedCourse", doc.get("selectedCourse"));
                 
                 // Access info for frontend
                 Map<String, Object> access = new HashMap<>();
-                access.put("mode", student.getCoursetype() != null && student.getCoursetype().equalsIgnoreCase("NEET") ? "professional" : "academics");
-                access.put("cardId", student.getCourseName() != null ? student.getCourseName().toLowerCase() : "");
-                access.put("subjects", student.getSubjects() != null ? student.getSubjects() : new ArrayList<>());
-                access.put("standards", student.getSelectedStandard() != null ? student.getSelectedStandard() : new ArrayList<>());
+                String coursetype = doc.getString("coursetype");
+                access.put("mode", coursetype != null && (coursetype.equalsIgnoreCase("NEET") || coursetype.equalsIgnoreCase("JEE")) ? "professional" : "academics");
+                access.put("cardId", doc.getString("courseName") != null ? doc.getString("courseName").toLowerCase() : "");
+                access.put("subjects", doc.get("subjects") != null ? doc.get("subjects") : new ArrayList<>());
+                access.put("standards", doc.get("selectedStandard") != null ? doc.get("selectedStandard") : new ArrayList<>());
                 studentData.put("access", access);
                 
                 studentList.add(studentData);
             }
             
             return ResponseEntity.ok(studentList);
+            
         } catch (Exception e) {
+            System.err.println("Error in getAllStudents: " + e.getMessage());
+            e.printStackTrace();
+            
             Map<String, String> error = new HashMap<>();
             error.put("status", "error");
             error.put("message", e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(500).body(error);
         }
     }
@@ -225,11 +241,14 @@ public class UserController {
         try {
             System.out.println("Attempting to delete student with ID/Email: " + id);
             
+            MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, "studentUsers");
             boolean deleted = false;
             
             // Try to delete by ObjectId first
             try {
-                deleted = studentService.deleteStudentById(id);
+                Query queryById = new Query(Criteria.where("_id").is(new ObjectId(id)));
+                DeleteResult result = mongoTemplate.remove(queryById, "studentUserDetail");
+                deleted = result.getDeletedCount() > 0;
                 if (deleted) {
                     System.out.println("Student deleted by ID");
                 }
@@ -239,7 +258,9 @@ public class UserController {
             
             // If not deleted by ID, try by email
             if (!deleted) {
-                deleted = studentService.deleteStudentByEmail(id);
+                Query queryByEmail = new Query(Criteria.where("email").is(id));
+                DeleteResult result = mongoTemplate.remove(queryByEmail, "studentUserDetail");
+                deleted = result.getDeletedCount() > 0;
                 if (deleted) {
                     System.out.println("Student deleted by email");
                 }
@@ -262,6 +283,11 @@ public class UserController {
         
         return ResponseEntity.ok(response);
     }
-    
-   
+
+    // Helper method to check if a document is a student
+    private boolean isStudentDocument(Document doc) {
+        return doc.containsKey("firstname") || 
+               doc.containsKey("email") || 
+               (doc.containsKey("role") && "student".equalsIgnoreCase(doc.getString("role")));
+    }
 }
