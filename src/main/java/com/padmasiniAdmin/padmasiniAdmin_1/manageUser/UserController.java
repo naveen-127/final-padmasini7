@@ -1,3 +1,4 @@
+// File: /home/ec2-user/final-padmasini7/src/main/java/com/padmasiniAdmin/padmasiniAdmin_1/manageUser/UserController.java
 package com.padmasiniAdmin.padmasiniAdmin_1.manageUser;
 
 import java.util.ArrayList;
@@ -21,11 +22,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import com.padmasiniAdmin.padmasiniAdmin_1.manageUser.StudentService; 
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.result.DeleteResult;
-import com.padmasiniAdmin.padmasiniAdmin_1.service.StudentService; // Correct import
 
 @RestController
 @RequestMapping("/api")
@@ -38,8 +37,7 @@ public class UserController {
     @Autowired 
     private MongoClient mongoClient;
     
-    @Autowired  // This is needed if you want to use StudentService
-    private StudentService studentService; // Make sure this is properly autowired
+    // NO StudentService import or autowired field here!
     
     @PostMapping("/newUser")
     public ResponseEntity<?> addNewUser(@RequestBody UserDTO user) {
@@ -63,7 +61,6 @@ public class UserController {
         response.put("courseName", courseName);
         response.put("role", role != null ? role : "student");
         
-        // Get default data based on role
         List<String> defaultSubjects = userService.getDefaultSubjectsPublic(courseName, role != null ? role : "student");
         List<String> defaultStandards = userService.getDefaultStandardsPublic(courseName, role != null ? role : "student");
         
@@ -91,7 +88,6 @@ public class UserController {
         System.out.println("  New email: " + user.getUser().getGmail());
         System.out.println("  Role: " + user.getUser().getRole());
         
-        // If email is being changed, check if new email already exists
         if (!gmail.equals(user.getUser().getGmail())) {
             MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, "users");
             Query query = new Query(Criteria.where("gmail").is(user.getUser().getGmail()));
@@ -102,15 +98,12 @@ public class UserController {
             }
         }
         
-        // Delete old user if email is different
         if (!gmail.equals(user.getUser().getGmail())) {
             userService.deleteUser(gmail);
         } else {
-            // If same email, just update by deleting and recreating
             userService.deleteUser(gmail);
         }
         
-        // Save new user with updated data
         boolean saved = userService.saveNewUser(user);
         if (saved) {
             map.put("status", "pass");
@@ -131,7 +124,6 @@ public class UserController {
         return ResponseEntity.ok(map);
     }
     
-    // Additional endpoint to get users by role
     @GetMapping("/getUsersByRole/{role}")
     public ResponseEntity<?> getUsersByRole(@PathVariable String role) {
         try {
@@ -152,33 +144,33 @@ public class UserController {
     @GetMapping("/getAllStudents")
     public ResponseEntity<?> getAllStudents() {
         try {
-            // Direct approach without StudentService
+            System.out.println("=== GET ALL STUDENTS CALLED ===");
+            
             MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, "studentUsers");
             
-            // Get all documents from studentUserDetail collection
+            if (!mongoTemplate.collectionExists("studentUserDetail")) {
+                System.out.println("Collection studentUserDetail does not exist");
+                return ResponseEntity.ok(new ArrayList<>());
+            }
+            
             Query query = new Query();
             List<Document> documents = mongoTemplate.find(query, Document.class, "studentUserDetail");
             
             System.out.println("Found " + documents.size() + " student documents");
             
-            // Convert documents to response format
             List<Map<String, Object>> studentList = new ArrayList<>();
             
             for (Document doc : documents) {
                 Map<String, Object> studentData = new HashMap<>();
                 
-                // Extract _id
                 if (doc.get("_id") != null && doc.get("_id") instanceof ObjectId) {
                     ObjectId objectId = (ObjectId) doc.get("_id");
                     studentData.put("_id", objectId.toString());
                     studentData.put("id", objectId.toString());
                 }
                 
-                // Extract all fields
                 studentData.put("firstname", doc.getString("firstname"));
                 studentData.put("lastname", doc.getString("lastname"));
-                
-                // Create fullName
                 String firstname = doc.getString("firstname") != null ? doc.getString("firstname") : "";
                 String lastname = doc.getString("lastname") != null ? doc.getString("lastname") : "";
                 studentData.put("fullName", firstname + " " + lastname);
@@ -193,7 +185,6 @@ public class UserController {
                 studentData.put("coursetype", doc.getString("coursetype"));
                 studentData.put("courseName", doc.getString("courseName"));
                 
-                // Add other fields if they exist
                 if (doc.containsKey("plan")) studentData.put("plan", doc.getString("plan"));
                 if (doc.containsKey("startDate")) studentData.put("startDate", doc.getString("startDate"));
                 if (doc.containsKey("endDate")) studentData.put("endDate", doc.getString("endDate"));
@@ -204,13 +195,11 @@ public class UserController {
                 if (doc.containsKey("comfortableDailyHours")) studentData.put("comfortableDailyHours", doc.getInteger("comfortableDailyHours"));
                 if (doc.containsKey("severity")) studentData.put("severity", doc.getString("severity"));
                 
-                // Lists
                 studentData.put("standards", doc.get("standards"));
                 studentData.put("selectedStandard", doc.get("selectedStandard"));
                 studentData.put("subjects", doc.get("subjects"));
                 studentData.put("selectedCourse", doc.get("selectedCourse"));
                 
-                // Access info for frontend
                 Map<String, Object> access = new HashMap<>();
                 String coursetype = doc.getString("coursetype");
                 access.put("mode", coursetype != null && (coursetype.equalsIgnoreCase("NEET") || coursetype.equalsIgnoreCase("JEE")) ? "professional" : "academics");
@@ -245,7 +234,6 @@ public class UserController {
             MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, "studentUsers");
             boolean deleted = false;
             
-            // Try to delete by ObjectId first
             try {
                 Query queryById = new Query(Criteria.where("_id").is(new ObjectId(id)));
                 DeleteResult result = mongoTemplate.remove(queryById, "studentUserDetail");
@@ -257,7 +245,6 @@ public class UserController {
                 System.out.println("Not a valid ObjectId, trying email...");
             }
             
-            // If not deleted by ID, try by email
             if (!deleted) {
                 Query queryByEmail = new Query(Criteria.where("email").is(id));
                 DeleteResult result = mongoTemplate.remove(queryByEmail, "studentUserDetail");
@@ -283,12 +270,5 @@ public class UserController {
         }
         
         return ResponseEntity.ok(response);
-    }
-
-    // Helper method to check if a document is a student
-    private boolean isStudentDocument(Document doc) {
-        return doc.containsKey("firstname") || 
-               doc.containsKey("email") || 
-               (doc.containsKey("role") && "student".equalsIgnoreCase(doc.getString("role")));
     }
 }
