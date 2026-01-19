@@ -10,6 +10,7 @@ public class MotherMCQTest {
     private String subjectName;
     private String unitName;
     private List<MCQTest> questionsList = new ArrayList<>();
+    private List<String> tags = new ArrayList<>();
 
     public String getTestName() { return testName; }
     public void setTestName(String testName) { this.testName = testName; }
@@ -26,6 +27,9 @@ public class MotherMCQTest {
     public String getUnitName() { return unitName; }
     public void setUnitName(String unitName) { this.unitName = unitName; }
 
+    public List<String> getTags() { return tags; }
+    public void setTags(List<String> tags) { this.tags = tags; }
+
     @Override
     public String toString() {
         return "MotherMCQTest{" +
@@ -33,6 +37,7 @@ public class MotherMCQTest {
                 ", marks=" + marks +
                 ", subjectName='" + subjectName + '\'' +
                 ", unitName='" + unitName + '\'' +
+                ", tags=" + tags + 
                 ", questions=" + (questionsList != null ? questionsList.size() : 0) +
                 '}';
     }
