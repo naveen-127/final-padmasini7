@@ -17,6 +17,7 @@ public class WrapperMCQTest {
     private String dbname;
     private String rootId;
     private String quesId;
+	private List<String> tags;
 
     // single-question fields (for updates if needed)
     private String question;
@@ -40,6 +41,9 @@ public class WrapperMCQTest {
     // getters / setters omitted for brevity in this snippet — include all in your file
     // (copy the same getters/setters from your original class)
     // ... generate or copy all getters and setters here ...
+	public List<String> getTags() { return tags; }
+    public void setTags(List<String> tags) { this.tags = tags; }
+	
     public List<MCQTest> getQuestionsList() { return questionsList; }
     public void setQuestionsList(List<MCQTest> questionsList) { this.questionsList = questionsList; }
 
