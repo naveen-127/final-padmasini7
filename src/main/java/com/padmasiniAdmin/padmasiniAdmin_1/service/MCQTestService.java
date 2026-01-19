@@ -77,6 +77,7 @@ public class MCQTestService {
             newTest.setMarks(data.getMarks());
             newTest.setSubjectName(data.getSubjectName());
             newTest.setUnitName(data.getUnitName());
+            newTest.setTags(data.getTags() != null ? data.getTags() : new ArrayList<>());
 
             List<MCQTest> questions = data.getQuestionsList() != null ? data.getQuestionsList() : new ArrayList<>();
             questions.forEach(this::sanitizeQuestionBeforeSave);
@@ -149,6 +150,12 @@ public class MCQTestService {
                 System.out.println("📁 Updating unit name: '" + test.getUnitName() + "' → '" + data.getUnitName() + "'");
                 test.setUnitName(data.getUnitName());
                 updated = true;
+            }
+
+            if (data.getTags() != null) {
+               System.out.println("🏷️ Updating tags: " + data.getTags());
+               test.setTags(data.getTags());
+               updated = true;
             }
 
             // ✅ CRITICAL FIX: Always update questions list if provided
