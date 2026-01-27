@@ -92,47 +92,42 @@ public class MCQTestController {
 	    
 	    System.out.println("🔄 ========== UPDATE QUESTION CONTROLLER CALLED ==========");
 	    System.out.println("📥 Parent ID from URL: " + parentId);
-	    System.out.println("📥 Old Test Name from URL (base64): " + oldName);
-	    
+	    System.out.println("📥 Old Test Name from URL: " + oldName);
+	    System.out.println("📥 Request Body Details:");
+	    System.out.println("  - RootId: " + question.getRootId());
+	    System.out.println("  - ParentId: " + question.getParentId());
+	    System.out.println("  - TestName: " + question.getTestName());
+	    System.out.println("  - UnitName: " + question.getUnitName());
+	    System.out.println("  - Marks: " + question.getMarks());
+	    System.out.println("  - Questions Count: " + (question.getQuestionsList() != null ? question.getQuestionsList().size() : 0));
+	    System.out.println("  - Dbname: " + question.getDbname());
+	    System.out.println("  - SubjectName: " + question.getSubjectName());
+
+	    // Log first question details
+	    if (question.getQuestionsList() != null && !question.getQuestionsList().isEmpty()) {
+	        System.out.println("📝 First Question Details:");
+	        MCQTest firstQ = question.getQuestionsList().get(0);
+	        System.out.println("  - Question: " + firstQ.getQuestion());
+	        System.out.println("  - Explanation: " + firstQ.getExplanation());
+	        System.out.println("  - Correct Index: " + firstQ.getCorrectIndex());
+	        System.out.println("  - Question Images: " + firstQ.getQuestionImages());
+	        System.out.println("  - Solution Images: " + firstQ.getSolutionImages());
+	    }
+
 	    try {
-	        // ✅ FIX: Decode base64 encoded old test name
-	        String decodedOldName;
-	        try {
-	            // First decode from base64, then from URI component
-	            String uriDecoded = new String(java.util.Base64.getDecoder().decode(oldName), "UTF-8");
-	            decodedOldName = java.net.URLDecoder.decode(uriDecoded, "UTF-8");
-	            System.out.println("✅ Decoded old test name: " + decodedOldName);
-	        } catch (Exception e) {
-	            // If base64 decoding fails, try using the string directly (backward compatibility)
-	            System.out.println("⚠️ Base64 decoding failed, using raw string");
-	            decodedOldName = oldName;
+	        // Enhanced validation
+	        if (question.getParentId() == null || question.getParentId().isEmpty()) {
+	            System.out.println("❌ ParentId is missing in request body");
+	            return ResponseEntity.badRequest().body("ParentId is required in request body");
 	        }
 	        
-	        System.out.println("📥 Request Body Details:");
-	        System.out.println("  - RootId: " + question.getRootId());
-	        System.out.println("  - ParentId: " + question.getParentId());
-	        System.out.println("  - TestName: " + question.getTestName());
-	        System.out.println("  - UnitName: " + question.getUnitName());
-	        System.out.println("  - Marks: " + question.getMarks());
-	        System.out.println("  - Questions Count: " + (question.getQuestionsList() != null ? question.getQuestionsList().size() : 0));
-
-	        // Log first question details
-	        if (question.getQuestionsList() != null && !question.getQuestionsList().isEmpty()) {
-	            System.out.println("📝 First Question Details:");
-	            MCQTest firstQ = question.getQuestionsList().get(0);
-	            System.out.println("  - Question: " + firstQ.getQuestion());
-	            System.out.println("  - Explanation: " + firstQ.getExplanation());
-	            System.out.println("  - Correct Index: " + firstQ.getCorrectIndex());
-	        }
-
-	        // Enhanced validation
 	        if (question.getRootId() == null || question.getRootId().isEmpty()) {
 	            System.out.println("❌ RootId is missing in request body");
 	            return ResponseEntity.badRequest().body("RootId is required in request body");
 	        }
 
-	        System.out.println("🔍 Calling service layer with decoded name: " + decodedOldName);
-	        String unitName = mcqTestService.updateQuestion(question, decodedOldName);
+	        System.out.println("🔍 Calling service layer...");
+	        String unitName = mcqTestService.updateQuestion(question, oldName);
 	        
 	        if (unitName == null || unitName.isEmpty()) {
 	            System.out.println("❌ Service returned null or empty unitName - UPDATE FAILED");
