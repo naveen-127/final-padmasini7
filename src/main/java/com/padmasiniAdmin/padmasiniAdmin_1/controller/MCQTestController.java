@@ -84,61 +84,37 @@ public class MCQTestController {
 	    }
 	}
 
-	@PutMapping("/updateQuestion/{parentId}/{oldName}")
-	public ResponseEntity<?> updateQuestion(
-	    @PathVariable("parentId") String parentId,
-	    @PathVariable("oldName") String oldName,
+	// ✅ ADD THIS SIMPLE SOLUTION
+	@PostMapping("/updateQuestion")
+	public ResponseEntity<?> updateQuestionViaPost(
+	    @RequestParam("parentId") String parentId,
+	    @RequestParam("oldTestName") String oldTestName,
 	    @RequestBody WrapperMCQTest question) {
 	    
-	    System.out.println("🔄 ========== UPDATE QUESTION CONTROLLER CALLED ==========");
-	    System.out.println("📥 Parent ID from URL: " + parentId);
-	    System.out.println("📥 Old Test Name from URL: " + oldName);
-	    System.out.println("📥 Request Body Details:");
-	    System.out.println("  - RootId: " + question.getRootId());
-	    System.out.println("  - ParentId: " + question.getParentId());
-	    System.out.println("  - TestName: " + question.getTestName());
-	    System.out.println("  - UnitName: " + question.getUnitName());
-	    System.out.println("  - Marks: " + question.getMarks());
-	    System.out.println("  - Questions Count: " + (question.getQuestionsList() != null ? question.getQuestionsList().size() : 0));
-	    System.out.println("  - Dbname: " + question.getDbname());
-	    System.out.println("  - SubjectName: " + question.getSubjectName());
-
-	    // Log first question details
-	    if (question.getQuestionsList() != null && !question.getQuestionsList().isEmpty()) {
-	        System.out.println("📝 First Question Details:");
-	        MCQTest firstQ = question.getQuestionsList().get(0);
-	        System.out.println("  - Question: " + firstQ.getQuestion());
-	        System.out.println("  - Explanation: " + firstQ.getExplanation());
-	        System.out.println("  - Correct Index: " + firstQ.getCorrectIndex());
-	        System.out.println("  - Question Images: " + firstQ.getQuestionImages());
-	        System.out.println("  - Solution Images: " + firstQ.getSolutionImages());
-	    }
-
+	    System.out.println("🔄 ========== UPDATE QUESTION VIA POST (SIMPLE FIX) ==========");
+	    System.out.println("📥 Parent ID from param: " + parentId);
+	    System.out.println("📥 Old Test Name from param: " + oldTestName);
+	    
 	    try {
 	        // Enhanced validation
-	        if (question.getParentId() == null || question.getParentId().isEmpty()) {
-	            System.out.println("❌ ParentId is missing in request body");
-	            return ResponseEntity.badRequest().body("ParentId is required in request body");
-	        }
-	        
 	        if (question.getRootId() == null || question.getRootId().isEmpty()) {
-	            System.out.println("❌ RootId is missing in request body");
 	            return ResponseEntity.badRequest().body("RootId is required in request body");
 	        }
 
+	        // Set parentId from parameter into the question object
+	        question.setParentId(parentId);
+	        
 	        System.out.println("🔍 Calling service layer...");
-	        String unitName = mcqTestService.updateQuestion(question, oldName);
+	        String unitName = mcqTestService.updateQuestion(question, oldTestName);
 	        
 	        if (unitName == null || unitName.isEmpty()) {
-	            System.out.println("❌ Service returned null or empty unitName - UPDATE FAILED");
 	            return ResponseEntity.badRequest().body("Failed to update test. Test not found or update failed.");
 	        }
 	        
-	        System.out.println("✅ Service returned unitName: " + unitName + " - UPDATE SUCCESSFUL");
 	        return ResponseEntity.ok(Collections.singletonMap("message", "Test updated successfully"));
 	        
 	    } catch (Exception e) {
-	        System.err.println("❌ EXCEPTION in updateQuestion controller:");
+	        System.err.println("❌ EXCEPTION in updateQuestionViaPost:");
 	        e.printStackTrace();
 	        return ResponseEntity.status(500).body("Internal Server Error: " + e.getMessage());
 	    }
