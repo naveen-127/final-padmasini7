@@ -110,4 +110,8 @@ public class WrapperMCQTest {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	public String getOldTestName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
