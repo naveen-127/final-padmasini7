@@ -190,6 +190,7 @@ public class MCQTestService {
                         System.out.println("  - Question Images: " + (processedQuestion.getQuestionImages() != null ? processedQuestion.getQuestionImages().size() : 0));
                         System.out.println("  - Solution Images: " + (processedQuestion.getSolutionImages() != null ? processedQuestion.getSolutionImages().size() : 0));
                         System.out.println("  - Table Data: " + (processedQuestion.getTableData() != null ? processedQuestion.getTableData().size() : 0));
+                        System.out.println("  - Tags: " + (processedQuestion.getTags() != null ? processedQuestion.getTags().size() : 0));
                     }
                 }
                 updated = true;
@@ -489,6 +490,11 @@ public class MCQTestService {
             q.setExplanation(data.getExplanation());
         }
         
+        if (data.getTags() != null) {
+            System.out.println("  - Updating tags: " + data.getTags());
+            q.setTags(data.getTags());
+        }
+        
         if (data.getSolutionImages() != null) {
             System.out.println("  - Updating solution images: " + data.getSolutionImages().size());
             q.setSolutionImages(sanitizeList(data.getSolutionImages(), "NO_SOLUTION_IMAGE"));
@@ -511,6 +517,7 @@ public class MCQTestService {
         
         try {
             System.out.println("🔧 Sanitizing question: " + (q.getQuestion() != null ? q.getQuestion().substring(0, Math.min(30, q.getQuestion().length())) : "null"));
+            System.out.println("  - Current tags: " + q.getTags());
             
             if (q.getId() == null || q.getId().trim().isEmpty()) {
                 String newId = new ObjectId().toHexString();
@@ -532,6 +539,11 @@ public class MCQTestService {
             if (q.getTableData() == null) {
                 q.setTableData(new ArrayList<>());
                 System.out.println("  - Initialized empty tableData");
+            }
+            
+            if (q.getTags() == null) {
+                q.setTags(new ArrayList<>());
+                System.out.println("⚠️  Warning: Tags was null, initialized empty");
             }
             
             // Safe null handling for strings
@@ -561,15 +573,14 @@ public class MCQTestService {
             }
             
             // Log final state
-            System.out.println("✅ Sanitized question - ID: " + q.getId() + ", Options: " + 
-                             q.getOption1() + ", " + q.getOption2() + ", " + q.getOption3() + ", " + q.getOption4());
-            
+            System.out.println("✅ Sanitized question - ID: " + q.getId() + 
+                    ", Tags: " + q.getTags() + 
+                    ", Options: " + q.getOption1() + ", " + q.getOption2() + ", " + q.getOption3() + ", " + q.getOption4());
         } catch (Exception e) {
             System.err.println("❌ Error in sanitizeQuestionBeforeSave:");
             e.printStackTrace();
         }
     }
-
     private List<String> sanitizeList(List<String> input, String defaultValue) {
         if (input == null || input.isEmpty()) {
             List<String> list = new ArrayList<>();
