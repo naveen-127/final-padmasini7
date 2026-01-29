@@ -17,7 +17,44 @@ public class Unit {
     private String description;        // Regular description
     private String customDescription;  // AI-generated custom description
     private Integer order; 
-
+    
+    private List<List<String>> tableData = new ArrayList<>();
+    private Integer rows = 0;
+    private Integer cols = 0;
+    private Boolean showMatches = false;
+    
+    // Getters and Setters for table data
+    public List<List<String>> getTableData() { 
+        return tableData; 
+    }
+    
+    public void setTableData(List<List<String>> tableData) { 
+        this.tableData = tableData != null ? tableData : new ArrayList<>();
+    }
+    
+    public Integer getRows() { 
+        return rows; 
+    }
+    
+    public void setRows(Integer rows) { 
+        this.rows = rows != null ? rows : 0;
+    }
+    
+    public Integer getCols() { 
+        return cols; 
+    }
+    
+    public void setCols(Integer cols) { 
+        this.cols = cols != null ? cols : 0;
+    }
+    
+    public Boolean getShowMatches() { 
+        return showMatches; 
+    }
+    
+    public void setShowMatches(Boolean showMatches) { 
+        this.showMatches = showMatches != null ? showMatches : false;
+    }
     public Integer getOrder() {
 		return order;
 	}
@@ -116,4 +153,14 @@ public class Unit {
                 ", subUnitCount=" + (units != null ? units.size() : 0) +
                 ", aiVideoUrl=" + aiVideoUrl + "]";
     }
+
+	public void setStandard(String standard) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public String getStandard() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
