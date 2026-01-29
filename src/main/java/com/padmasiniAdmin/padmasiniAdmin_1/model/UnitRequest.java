@@ -24,6 +24,9 @@ public class UnitRequest {
     private List<String> audioFileId = new ArrayList<>();
     private String aiVideoUrl;
     private String parentId;
+    
+    // ✅ Add isLesson field to distinguish head units from subtopics
+    private Boolean isLesson;
 
     // ✅ Tests inside this UnitRequest
     private List<MotherMCQTest> test = new ArrayList<>();
@@ -33,6 +36,7 @@ public class UnitRequest {
 
     // ----- Constructors -----
     public UnitRequest() {
+        this.isLesson = true; // Default to true for head units
     }
 
     // ----- Getters & Setters -----
@@ -82,15 +86,53 @@ public class UnitRequest {
     public String getDescription() {
         return description;
     }
-    public void setDescription(Object object) {
-        this.description = (String) object;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getCustomDescription() {
         return customDescription;
     }
-    public void setCustomDescription(Object object) {
-        this.customDescription = (String) object;
+    public void setCustomDescription(String customDescription) {
+        this.customDescription = customDescription;
+    }
+    
+    private List<List<String>> tableData = new ArrayList<>();
+    private Integer rows = 0;
+    private Integer cols = 0;
+    private Boolean showMatches = false;
+    
+    // Getters and Setters
+    public List<List<String>> getTableData() { 
+        return tableData; 
+    }
+    
+    public void setTableData(List<List<String>> tableData) { 
+        this.tableData = tableData != null ? tableData : new ArrayList<>();
+    }
+    
+    public Integer getRows() { 
+        return rows; 
+    }
+    
+    public void setRows(Integer rows) { 
+        this.rows = rows != null ? rows : 0;
+    }
+    
+    public Integer getCols() { 
+        return cols; 
+    }
+    
+    public void setCols(Integer cols) { 
+        this.cols = cols != null ? cols : 0;
+    }
+    
+    public Boolean getShowMatches() { 
+        return showMatches; 
+    }
+    
+    public void setShowMatches(Boolean showMatches) { 
+        this.showMatches = showMatches != null ? showMatches : false;
     }
 
     public List<String> getTags() {
@@ -126,6 +168,15 @@ public class UnitRequest {
     }
     public void setParentId(String parentId) {
         this.parentId = parentId;
+    }
+
+    // ✅ Proper isLesson implementation
+    public Boolean getIsLesson() {
+        return isLesson;
+    }
+    
+    public void setIsLesson(Boolean isLesson) {
+        this.isLesson = isLesson;
     }
 
     public List<Unit> getUnits() {
@@ -172,6 +223,7 @@ public class UnitRequest {
                 ", audioFileId=" + audioFileId +
                 ", aiVideoUrl='" + aiVideoUrl + '\'' +
                 ", parentId='" + parentId + '\'' +
+                ", isLesson=" + isLesson +
                 ", units=" + units +
                 ", test=" + test +
                 '}';
