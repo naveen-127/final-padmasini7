@@ -33,6 +33,45 @@ public class WrapperUnit {
     private String aiVideoUrl;            // S3 URL of generated/AI video
 
 	private List<String> tags; 
+	
+	private List<List<String>> tableData;
+    private Integer rows;
+    private Integer cols;
+    private Boolean showMatches;
+    
+    // Getters and Setters for table data
+    public List<List<String>> getTableData() { 
+        return tableData; 
+    }
+    
+    public void setTableData(List<List<String>> tableData) { 
+        this.tableData = tableData;
+    }
+    
+    public Integer getRows() { 
+        return rows; 
+    }
+    
+    public void setRows(Integer rows) { 
+        this.rows = rows;
+    }
+    
+    public Integer getCols() { 
+        return cols; 
+    }
+    
+    public void setCols(Integer cols) { 
+        this.cols = cols;
+    }
+    
+    public Boolean getShowMatches() { 
+        return showMatches; 
+    }
+    
+    public void setShowMatches(Boolean showMatches) { 
+        this.showMatches = showMatches;
+    }
+    
 
     // ----- Audio Management -----
     private List<String> keepAudioFileIds; // IDs to retain on update
