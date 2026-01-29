@@ -37,6 +37,8 @@ public class MCQTest {
     private int rows;
     private int cols;
     private List<List<String>> tableData = new ArrayList<>();
+    
+    private List<String> tags = new ArrayList<>();
 
     public MCQTest() {
         this.id = new ObjectId().toHexString();
@@ -94,4 +96,7 @@ public class MCQTest {
 
     public List<List<String>> getTableData() { return tableData; }
     public void setTableData(List<List<String>> tableData) { this.tableData = tableData; }
+    
+    public List<String> getTags() { return tags; }
+    public void setTags(List<String> tags) { this.tags = tags; }
 }
