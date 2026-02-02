@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/people-enquiries")
+@RequestMapping("/people-enquiries")
 @CrossOrigin(origins = "https://dafj1druksig9.cloudfront.net", allowCredentials = "true")
 public class PeopleEnquiryController {
     
