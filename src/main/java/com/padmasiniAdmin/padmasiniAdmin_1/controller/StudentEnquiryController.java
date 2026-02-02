@@ -25,8 +25,8 @@ import java.nio.charset.StandardCharsets;
 import org.bson.types.Binary;
 
 @RestController
-@RequestMapping("/support")
-@CrossOrigin(origins = "https://dafj1druksig9.cloudfront.net", allowCredentials = "true")
+@RequestMapping("/api/support")
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class StudentEnquiryController {
     
     private static final Logger logger = LoggerFactory.getLogger(StudentEnquiryController.class);
