@@ -16,7 +16,9 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/people-enquiries")
-@CrossOrigin(origins = {"http://localhost:3000", "https://trilokinnovations.com"}, allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:3000", "https://trilokinnovations.com"}, 
+allowCredentials = "true",
+maxAge = 3600)
 public class PeopleEnquiryController {
     
     private static final Logger logger = LoggerFactory.getLogger(PeopleEnquiryController.class);
