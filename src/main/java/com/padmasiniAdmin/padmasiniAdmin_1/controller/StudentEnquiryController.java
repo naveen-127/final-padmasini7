@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets;
 import org.bson.types.Binary;
 
 @RestController
-@RequestMapping("/api/support")
+@RequestMapping("/support")
 @CrossOrigin(origins = "https://dafj1druksig9.cloudfront.net", allowCredentials = "true")
 public class StudentEnquiryController {
     
