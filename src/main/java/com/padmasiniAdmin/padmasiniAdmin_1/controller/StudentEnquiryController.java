@@ -26,7 +26,7 @@ import org.bson.types.Binary;
 
 @RestController
 @RequestMapping("/api/support")
-@CrossOrigin(origins = "https://dafj1druksig9.cloudfront.net/", allowCredentials = "true")
+@CrossOrigin(origins = "https://trilokinnovations.com", allowCredentials = "true")
 public class StudentEnquiryController {
     
     private static final Logger logger = LoggerFactory.getLogger(StudentEnquiryController.class);
