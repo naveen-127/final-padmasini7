@@ -4,8 +4,9 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
 
-@Document(collection = "studentUserDetail")  // Map to the correct collection
+@Document(collection = "studentUserDetail")
 public class StudentModel {
     
     @Id
@@ -22,8 +23,11 @@ public class StudentModel {
     private List<String> subjects;
     private Map<String, Object> selectedCourse;
     private List<String> selectedStandard;
+    private String photo;
     private String dob;
     private String gender;
+    private String city;
+    private String state;
     private String plan;
     private String startDate;
     private String endDate;
@@ -31,8 +35,14 @@ public class StudentModel {
     private String paymentMethod;
     private String amountPaid;
     private String payerId;
+    private String couponUsed;
+    private String discountPercentage;
+    private String discountAmount;
+    private String action;
     private Integer comfortableDailyHours;
     private String severity;
+    private List<Map<String, Object>> paymentHistory;
+    private String _class;
     
     // Constructors
     public StudentModel() {
@@ -135,6 +145,14 @@ public class StudentModel {
         this.selectedStandard = selectedStandard;
     }
     
+    public String getPhoto() {
+        return photo;
+    }
+    
+    public void setPhoto(String photo) {
+        this.photo = photo;
+    }
+    
     public String getDob() {
         return dob;
     }
@@ -149,6 +167,22 @@ public class StudentModel {
     
     public void setGender(String gender) {
         this.gender = gender;
+    }
+    
+    public String getCity() {
+        return city;
+    }
+    
+    public void setCity(String city) {
+        this.city = city;
+    }
+    
+    public String getState() {
+        return state;
+    }
+    
+    public void setState(String state) {
+        this.state = state;
     }
     
     public String getPlan() {
@@ -207,6 +241,38 @@ public class StudentModel {
         this.payerId = payerId;
     }
     
+    public String getCouponUsed() {
+        return couponUsed;
+    }
+    
+    public void setCouponUsed(String couponUsed) {
+        this.couponUsed = couponUsed;
+    }
+    
+    public String getDiscountPercentage() {
+        return discountPercentage;
+    }
+    
+    public void setDiscountPercentage(String discountPercentage) {
+        this.discountPercentage = discountPercentage;
+    }
+    
+    public String getDiscountAmount() {
+        return discountAmount;
+    }
+    
+    public void setDiscountAmount(String discountAmount) {
+        this.discountAmount = discountAmount;
+    }
+    
+    public String getAction() {
+        return action;
+    }
+    
+    public void setAction(String action) {
+        this.action = action;
+    }
+    
     public Integer getComfortableDailyHours() {
         return comfortableDailyHours;
     }
@@ -221,6 +287,22 @@ public class StudentModel {
     
     public void setSeverity(String severity) {
         this.severity = severity;
+    }
+    
+    public List<Map<String, Object>> getPaymentHistory() {
+        return paymentHistory;
+    }
+    
+    public void setPaymentHistory(List<Map<String, Object>> paymentHistory) {
+        this.paymentHistory = paymentHistory;
+    }
+    
+    public String get_class() {
+        return _class;
+    }
+    
+    public void set_class(String _class) {
+        this._class = _class;
     }
     
     @Override
