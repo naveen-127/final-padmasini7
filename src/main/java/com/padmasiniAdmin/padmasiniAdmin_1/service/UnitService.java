@@ -604,11 +604,26 @@ public class UnitService {
  // =============================
  // 🔹 Move Unit (Subtopic) Up/Down
  // =============================
+ // =============================
+ // 🔹 Move Unit (Subtopic) Up/Down - Updated for special subjects
+ // =============================
+ // =============================
+ // 🔹 Move Unit (Subtopic) Up/Down - FIXED for special subjects
+ // =============================
  public boolean moveUnit(WrapperUnit data, String direction) {
      System.out.println("🔄 Moving unit ID: " + data.getParentId() + " direction: " + direction);
      System.out.println("📊 Data: rootId=" + data.getRootId() + ", parentId=" + data.getParentId() 
                        + ", db=" + data.getDbname() + ", subject=" + data.getSubjectName());
      
+     // Check if this is a special subject lesson move
+     Boolean isSpecialSubject = data.getIsSpecialSubject();
+     if (isSpecialSubject != null && isSpecialSubject) {
+         // For special subjects, we need to handle differently - they are top-level documents
+         System.out.println("🎯 Handling as special subject lesson move");
+         return moveSpecialSubjectLesson(data, direction);
+     }
+     
+     // For normal subjects with nested structure
      UnitRequest root = getById(data.getRootId(), data.getSubjectName(), data.getDbname());
      if (root == null) {
          System.out.println("❌ Root unit not found");
@@ -824,7 +839,120 @@ public class UnitService {
      
      return false;
  }
-
+ 
+//=============================
+//🔹 Move Lesson for Special Subjects
+//=============================
+//=============================
+//🔹 Move Lesson for Special Subjects - IMPROVED
+//=============================
+public boolean moveSpecialSubjectLesson(WrapperUnit data, String direction) {
+  System.out.println("🔄 Moving special subject lesson ID: " + data.getParentId() + " direction: " + direction);
+  System.out.println("📊 Data: parentId=" + data.getParentId() + ", db=" + data.getDbname() + ", subject=" + data.getSubjectName());
+  
+  MongoTemplate mongoTemplate = getTemplate(data.getDbname());
+  String collectionName = data.getSubjectName();
+  
+  // For special subjects, lessons are top-level documents
+  // We need to get the target lesson
+  UnitRequest targetLesson = getById(data.getParentId(), collectionName, data.getDbname());
+  if (targetLesson == null) {
+      System.out.println("❌ Target lesson not found");
+      return false;
+  }
+  
+  // Get all lessons
+  Query query = new Query();
+  List<UnitRequest> allLessons = mongoTemplate.find(query, UnitRequest.class, collectionName);
+  
+  if (allLessons == null || allLessons.isEmpty()) {
+      System.out.println("❌ No lessons found");
+      return false;
+  }
+  
+  // Find the target lesson index
+  int currentIndex = -1;
+  for (int i = 0; i < allLessons.size(); i++) {
+      UnitRequest lesson = allLessons.get(i);
+      if (lesson.getId().equals(data.getParentId())) {
+          currentIndex = i;
+          System.out.println("🎯 Target lesson found at index: " + currentIndex + " - " + lesson.getUnitName());
+          break;
+      }
+  }
+  
+  if (currentIndex == -1) {
+      System.out.println("❌ Target lesson not found in list");
+      return false;
+  }
+  
+  // Calculate new index
+  int newIndex;
+  if ("up".equals(direction)) {
+      if (currentIndex == 0) {
+          System.out.println("⚠️ Cannot move up - already at position 0");
+          return false;
+      }
+      newIndex = currentIndex - 1;
+  } else if ("down".equals(direction)) {
+      if (currentIndex == allLessons.size() - 1) {
+          System.out.println("⚠️ Cannot move down - already at last position");
+          return false;
+      }
+      newIndex = currentIndex + 1;
+  } else {
+      return false;
+  }
+  
+  System.out.println("🔄 Moving lesson from index " + currentIndex + " to " + newIndex);
+  
+  // Get the lesson at the new index
+  UnitRequest otherLesson = allLessons.get(newIndex);
+  
+  // Instead of delete and reinsert (which can cause issues), 
+  // we'll update a "order" field if you have one, or reinsert in correct order
+  
+  // If you have an 'order' field in your documents, update that
+  // If not, we need to handle by swapping
+  
+  // Option 1: If you have an 'order' field
+  // int tempOrder = targetLesson.getOrder();
+  // targetLesson.setOrder(otherLesson.getOrder());
+  // otherLesson.setOrder(tempOrder);
+  // mongoTemplate.save(targetLesson, collectionName);
+  // mongoTemplate.save(otherLesson, collectionName);
+  
+  // Option 2: Without an order field, we need to swap by reinserting in correct order
+  // Remove both lessons
+  mongoTemplate.remove(Query.query(Criteria.where("_id").is(targetLesson.getId())), UnitRequest.class, collectionName);
+  mongoTemplate.remove(Query.query(Criteria.where("_id").is(otherLesson.getId())), UnitRequest.class, collectionName);
+  
+  // Reinsert in the correct order based on the move direction
+  if (newIndex < currentIndex) {
+      // Moving up - insert target first, then other
+      mongoTemplate.save(targetLesson, collectionName);
+      mongoTemplate.save(otherLesson, collectionName);
+  } else {
+      // Moving down - insert other first, then target
+      mongoTemplate.save(otherLesson, collectionName);
+      mongoTemplate.save(targetLesson, collectionName);
+  }
+  
+  // Reinsert the rest of the lessons in their original order
+  for (int i = 0; i < allLessons.size(); i++) {
+      if (i != currentIndex && i != newIndex) {
+          UnitRequest lesson = allLessons.get(i);
+          // Check if the lesson still exists (wasn't removed)
+          UnitRequest existing = getById(lesson.getId(), collectionName, data.getDbname());
+          if (existing == null) {
+              mongoTemplate.save(lesson, collectionName);
+          }
+      }
+  }
+  
+  System.out.println("✅ Special subject lesson moved successfully");
+  return true;
+}
  private Unit findParentUnit(UnitRequest root, String parentId) {
      if (root.getUnits() != null) {
          for (Unit unit : root.getUnits()) {
