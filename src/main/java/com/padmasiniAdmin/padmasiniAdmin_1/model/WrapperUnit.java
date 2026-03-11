@@ -140,4 +140,9 @@ public class WrapperUnit {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	public Boolean getIsSpecialSubject() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
