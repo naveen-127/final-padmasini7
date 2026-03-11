@@ -214,6 +214,45 @@ public ResponseEntity<Map<String, Object>> getSpecialSubjectStructure(
          return ResponseEntity.status(500).body(response);
      }
  }
+ 
+//-----------------------------
+//Move special subject lesson
+//-----------------------------
+@PostMapping("/moveSpecialSubjectLesson/{direction}")
+public ResponseEntity<Map<String, Object>> moveSpecialSubjectLesson(
+      @RequestBody WrapperUnit unit,
+      @PathVariable String direction) {
+  
+  Map<String, Object> response = new HashMap<>();
+  
+  if (!direction.equals("up") && !direction.equals("down")) {
+      response.put("status", "failed");
+      response.put("message", "Direction must be 'up' or 'down'");
+      return ResponseEntity.badRequest().body(response);
+  }
+  
+  try {
+      boolean moved = unitService.moveSpecialSubjectLesson(unit, direction);
+      
+      if (moved) {
+          response.put("status", "success");
+          response.put("message", "Lesson moved successfully");
+      } else {
+          response.put("status", "failed");
+          response.put("message", "Lesson not found or cannot be moved");
+      }
+      
+      return ResponseEntity.ok(response);
+      
+  } catch (Exception e) {
+      System.err.println("❌ Error moving special subject lesson: " + e.getMessage());
+      e.printStackTrace();
+      
+      response.put("status", "error");
+      response.put("message", "Internal server error: " + e.getMessage());
+      return ResponseEntity.status(500).body(response);
+  }
+}
 
  // -----------------------------
  // Move test up/down
