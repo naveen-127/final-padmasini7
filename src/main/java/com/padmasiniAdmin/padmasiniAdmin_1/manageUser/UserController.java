@@ -33,7 +33,7 @@ import com.mongodb.client.result.DeleteResult;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = {"http://localhost:3000", "https://trilokinnovations.com"}, 
+@CrossOrigin(origins = {"http://localhost:3000", "https://trilokinnovations.com", "https://dafj1druksig9.cloudfront.net"}, 
 allowCredentials = "true",
 maxAge = 3600)
 public class UserController {
