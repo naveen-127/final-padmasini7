@@ -30,9 +30,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.result.DeleteResult;
 
-@CrossOrigin(origins = "https://trilokinnovations.com", allowCredentials = "true")
+
 @RestController
 @RequestMapping("/api")
+@CrossOrigin(origins = {"http://localhost:3000", "https://trilokinnovations.com"}, 
+allowCredentials = "true",
+maxAge = 3600)
 public class UserController {
     Map<String, String> map = new HashMap<String, String>();
     
