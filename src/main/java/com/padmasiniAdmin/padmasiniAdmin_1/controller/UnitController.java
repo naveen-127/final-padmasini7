@@ -214,16 +214,73 @@ public ResponseEntity<Map<String, Object>> getSpecialSubjectStructure(
          return ResponseEntity.status(500).body(response);
      }
  }
+
  
-//-----------------------------
-//Move special subject lesson
-//-----------------------------
+//Add this new endpoint for moving root-level units
+@PostMapping("/moveRootUnit/{direction}")
+public ResponseEntity<Map<String, Object>> moveRootUnit(
+      @RequestBody Map<String, Object> request,
+      @PathVariable String direction) {
+  
+  Map<String, Object> response = new HashMap<>();
+  
+  String dbname = (String) request.get("dbname");
+  String subjectName = (String) request.get("subjectName");
+  String unitId = (String) request.get("unitId");
+  String unitName = (String) request.get("unitName");
+  String standard = (String) request.get("standard");
+  
+  System.out.println("🎯 Received moveRootUnit request:");
+  System.out.println("  - Direction: " + direction);
+  System.out.println("  - Unit ID: " + unitId);
+  System.out.println("  - Unit Name: " + unitName);
+  System.out.println("  - DB: " + dbname);
+  System.out.println("  - Subject: " + subjectName);
+  System.out.println("  - Standard: " + standard);
+  
+  if (!direction.equals("up") && !direction.equals("down")) {
+      response.put("status", "failed");
+      response.put("message", "Direction must be 'up' or 'down'");
+      return ResponseEntity.badRequest().body(response);
+  }
+  
+  try {
+      boolean moved = unitService.moveRootUnit(dbname, subjectName, unitId, standard, direction);
+      
+      if (moved) {
+          response.put("status", "success");
+          response.put("message", "Root unit moved successfully");
+      } else {
+          response.put("status", "failed");
+          response.put("message", "Unit not found or cannot be moved");
+      }
+      
+      return ResponseEntity.ok(response);
+      
+  } catch (Exception e) {
+      System.err.println("❌ Error in moveRootUnit: " + e.getMessage());
+      e.printStackTrace();
+      
+      response.put("status", "error");
+      response.put("message", "Internal server error: " + e.getMessage());
+      return ResponseEntity.status(500).body(response);
+  }
+}
+
+//Add this endpoint for moving special subject lessons
 @PostMapping("/moveSpecialSubjectLesson/{direction}")
 public ResponseEntity<Map<String, Object>> moveSpecialSubjectLesson(
       @RequestBody WrapperUnit unit,
       @PathVariable String direction) {
   
   Map<String, Object> response = new HashMap<>();
+  
+  System.out.println("🎯 Received moveSpecialSubjectLesson request:");
+  System.out.println("  - Direction: " + direction);
+  System.out.println("  - Unit ID: " + unit.getParentId());
+  System.out.println("  - Unit Name: " + unit.getUnitName());
+  System.out.println("  - DB: " + unit.getDbname());
+  System.out.println("  - Subject: " + unit.getSubjectName());
   
   if (!direction.equals("up") && !direction.equals("down")) {
       response.put("status", "failed");
@@ -245,7 +302,7 @@ public ResponseEntity<Map<String, Object>> moveSpecialSubjectLesson(
       return ResponseEntity.ok(response);
       
   } catch (Exception e) {
-      System.err.println("❌ Error moving special subject lesson: " + e.getMessage());
+      System.err.println("❌ Error in moveSpecialSubjectLesson: " + e.getMessage());
       e.printStackTrace();
       
       response.put("status", "error");
@@ -253,7 +310,6 @@ public ResponseEntity<Map<String, Object>> moveSpecialSubjectLesson(
       return ResponseEntity.status(500).body(response);
   }
 }
-
  // -----------------------------
  // Move test up/down
  // -----------------------------
