@@ -29,7 +29,8 @@ public class WebConfig implements WebMvcConfigurer {
                "http://www.trilokinnovations.com",
                "https://trilokinnovations.com",
                "http://trilokinnovations.com",
-               "http://trilokinnovations.s3-website.ap-south-1.amazonaws.com"
+               "http://trilokinnovations.s3-website.ap-south-1.amazonaws.com",
+               "http://18.232.147.219:5000"
                // Removed the extra CloudFront URL that was here
            )
            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
