@@ -30,7 +30,7 @@ public class WebConfig implements WebMvcConfigurer {
                "https://trilokinnovations.com",
                "http://trilokinnovations.com",
                "http://trilokinnovations.s3-website.ap-south-1.amazonaws.com",
-               "http://18.232.147.219"
+               "http://18.232.147.219",
                "https://d2l8p0hsuvduse.cloudfront.net"
                // Removed the extra CloudFront URL that was here
            )
