@@ -14,7 +14,7 @@ public class PadmasiniAdmin1Application {
     }
     
     @Bean	
-    public WebMvcConfigurer corsConfigurer() {
+    public WebMvcConfigurer corsConfigurer() {	
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {

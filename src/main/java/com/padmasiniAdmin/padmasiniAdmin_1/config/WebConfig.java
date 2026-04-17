@@ -3,9 +3,6 @@ package com.padmasiniAdmin.padmasiniAdmin_1.config;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -39,12 +36,5 @@ public class WebConfig implements WebMvcConfigurer {
            .allowedHeaders("*")
            .allowCredentials(true)
            .maxAge(3600);
-    }
-
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String uploadPath = java.nio.file.Paths.get("uploads").toAbsolutePath().toUri().toString();
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations(uploadPath);
     }
 }
