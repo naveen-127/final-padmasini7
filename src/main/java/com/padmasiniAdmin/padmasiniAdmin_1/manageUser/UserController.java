@@ -35,17 +35,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(
-    origins = {
-        "https://trilokinnovations.com",
-        "https://dafj1druksig9.cloudfront.net",
-        "http://localhost:3000"
-    },
-    allowCredentials = "true",
-    allowedHeaders = {"Origin", "Content-Type", "Accept", "Authorization"}, // Changed from "*"
-    methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS},
-    maxAge = 3600
-)
 
 public class UserController {
     Map<String, String> map = new HashMap<String, String>();
