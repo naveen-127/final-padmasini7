@@ -42,7 +42,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
         "http://localhost:3000"
     },
     allowCredentials = "true",
-    allowedHeaders = "*",
+    allowedHeaders = {"Origin", "Content-Type", "Accept", "Authorization"}, // Changed from "*"
     methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS},
     maxAge = 3600
 )
