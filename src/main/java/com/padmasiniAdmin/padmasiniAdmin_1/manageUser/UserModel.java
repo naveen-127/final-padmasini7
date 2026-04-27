@@ -1,5 +1,6 @@
 package com.padmasiniAdmin.padmasiniAdmin_1.manageUser;
 
+import org.springframework.data.annotation.Id;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +18,7 @@ private String courseName;
 private List<String>standards=new ArrayList<String>();
 private List<String> subjects=new ArrayList<String>();
 private String phoneNumber;
+@Id
 private String id;
 private String firstname;
 private String lastname;
@@ -219,49 +221,40 @@ public static long getSerialversionuid() {
 	return serialVersionUID;
 }
 
-public Object getId() {
-	// TODO Auto-generated method stub
-	return null;
+public String getId() {
+	return id;
 }
 
-public Object getFirstname() {
-	// TODO Auto-generated method stub
-	return null;
+public String getFirstname() {
+	return firstname;
 }
 
-public Object getLastname() {
-	// TODO Auto-generated method stub
-	return null;
+public String getLastname() {
+	return lastname;
 }
 
-public Object getEmail() {
-	// TODO Auto-generated method stub
-	return null;
+public String getEmail() {
+	return email;
 }
 
-public Object getMobile() {
-	// TODO Auto-generated method stub
-	return null;
+public String getMobile() {
+	return mobile;
 }
 
-public Object getDob() {
-	// TODO Auto-generated method stub
-	return null;
+public String getDob() {
+	return dob;
 }
 
-public Object getGender() {
-	// TODO Auto-generated method stub
-	return null;
+public String getGender() {
+	return gender;
 }
 
-public Object getSelectedCourse() {
-	// TODO Auto-generated method stub
-	return null;
+public Map<String, Object> getSelectedCourse() {
+	return selectedCourse;
 }
 
-public Object getSelectedStandard() {
-	// TODO Auto-generated method stub
-	return null;
+public List<String> getSelectedStandard() {
+	return selectedStandard;
 }
 
 

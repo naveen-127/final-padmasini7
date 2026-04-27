@@ -11,6 +11,11 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.List;
 import java.util.Optional;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import org.springframework.beans.factory.annotation.Value;
 
 @RestController
 @RequestMapping("/api/tests")
@@ -20,14 +25,29 @@ public class TestController {
     @Autowired
     private TestPaperRepository repository;
 
-    private final String UPLOAD_DIR = "uploads/tests";
+    private final Region region;
+    private final String bucketName;
+    private final S3Client s3Client;
+
+    public TestController(
+            @Value("${aws.region:ap-south-1}") String awsRegion,
+            @Value("${aws.bucket.name:trilokinnovations-test-admin}") String bucketName
+    ) {
+        this.region = Region.of(awsRegion);
+        this.bucketName = bucketName;
+        this.s3Client = S3Client.builder()
+                .region(region)
+                .build();
+    }
 
     @PostMapping("/create")
     public ResponseEntity<?> createTest(
             @RequestParam("title") String title,
-            @RequestParam("content") String content,
+            @RequestParam("questions") String questions,
+            @RequestParam("boardType") String boardType,
             @RequestParam("subject") String subject,
             @RequestParam("standard") String standard,
+            @RequestParam(value = "teacherId", required = false) String teacherId,
             @RequestParam(value = "file", required = false) MultipartFile file) {
 
         try {
@@ -37,9 +57,11 @@ public class TestController {
 
             TestPaper test = new TestPaper();
             test.setTitle(title);
-            test.setContent(content);
+            test.setQuestions(questions);
+            test.setBoardType(boardType);
             test.setSubject(subject);
             test.setStandard(standard);
+            test.setTeacherId(teacherId);
 
             if (file != null && !file.isEmpty()) {
                 saveFile(file, test);
@@ -58,18 +80,22 @@ public class TestController {
     public ResponseEntity<?> updateTest(
             @PathVariable String id,
             @RequestParam("title") String title,
-            @RequestParam("content") String content,
+            @RequestParam("questions") String questions,
+            @RequestParam("boardType") String boardType,
             @RequestParam("subject") String subject,
             @RequestParam("standard") String standard,
+            @RequestParam(value = "teacherId", required = false) String teacherId,
             @RequestParam(value = "file", required = false) MultipartFile file) {
         try {
             Optional<TestPaper> optionalTest = repository.findById(id);
             if (optionalTest.isPresent()) {
                 TestPaper existingTest = optionalTest.get();
                 existingTest.setTitle(title);
-                existingTest.setContent(content);
+                existingTest.setQuestions(questions);
+                existingTest.setBoardType(boardType);
                 existingTest.setSubject(subject);
                 existingTest.setStandard(standard);
+                existingTest.setTeacherId(teacherId);
 
                 if (file != null && !file.isEmpty()) {
                     saveFile(file, existingTest);
@@ -112,13 +138,19 @@ public class TestController {
 
     
     private void saveFile(MultipartFile file, TestPaper test) throws IOException {
-        Path uploadPath = Paths.get(UPLOAD_DIR);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
         String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-        Path filePath = uploadPath.resolve(fileName);
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-        test.setFilePath(fileName);
+        String key = "tests/" + fileName;
+
+        s3Client.putObject(
+                PutObjectRequest.builder()
+                        .bucket(bucketName)
+                        .key(key)
+                        .contentType(file.getContentType())
+                        .build(),
+                RequestBody.fromBytes(file.getBytes())
+        );
+
+        String fileUrl = "https://" + bucketName + ".s3." + region.id() + ".amazonaws.com/" + key;
+        test.setFilePath(fileUrl);
     }
 }

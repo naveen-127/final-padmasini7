@@ -60,9 +60,11 @@ public class SignINController {
             map.put("courseName", userr.getCourseName());
             map.put("subjects", userr.getSubjects());
             map.put("standards", userr.getStandards());
+            map.put("id", userr.getId());
             
             // Set session for server-side operations
             session.setAttribute("user", userr.getUserName());
+            session.setAttribute("id", userr.getId());
             session.setAttribute("phoneNumber", userr.getPhoneNumber());
             session.setAttribute("gmail", userr.getGmail());
             session.setAttribute("role", userr.getRole());
@@ -127,6 +129,7 @@ public class SignINController {
             map.put("courseName", session.getAttribute("courseName"));
             map.put("subjects", session.getAttribute("subjects"));
             map.put("standards", session.getAttribute("standards"));
+            map.put("id", session.getAttribute("id"));
         } else {
             System.out.println("inside checksession user null");
             map.put("status", "failed");
