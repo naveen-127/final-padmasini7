@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Value;
 
 @RestController
 @RequestMapping("/api/tests")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true") 
 public class TestController {
 
     @Autowired

@@ -16,9 +16,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/coupons")
-@CrossOrigin(origins = {"http://localhost:3000", "https://trilokinnovations.com"}, 
-allowCredentials = "true",
-maxAge = 3600)
 public class CouponController {
     
     private static final Logger logger = LoggerFactory.getLogger(CouponController.class);

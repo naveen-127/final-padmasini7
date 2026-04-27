@@ -18,7 +18,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/test-submissions")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class TestSubmissionController {
 
     @Autowired

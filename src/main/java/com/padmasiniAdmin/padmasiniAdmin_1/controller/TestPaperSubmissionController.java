@@ -32,7 +32,6 @@ import org.springframework.beans.factory.annotation.Value;
 
 @RestController
 @RequestMapping("/api/test-paper-submissions")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class TestPaperSubmissionController {
 
     @Autowired

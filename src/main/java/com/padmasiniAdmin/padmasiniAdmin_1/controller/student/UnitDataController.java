@@ -16,7 +16,6 @@ import com.padmasiniAdmin.padmasiniAdmin_1.service.StudentDataService; // Correc
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class UnitDataController {
     
     @Autowired
