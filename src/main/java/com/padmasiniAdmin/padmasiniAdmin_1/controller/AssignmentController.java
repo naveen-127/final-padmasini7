@@ -21,6 +21,26 @@ public class AssignmentController {
     public ResponseEntity<Map<String, String>> assignClass(@RequestBody ClassAssignment assignment) {
         Map<String, String> response = new HashMap<>();
         try {
+            // Check for existing batch with same name and subject
+            List<ClassAssignment> existing = repository.findByBatchNameAndSubject(assignment.getBatchName(), assignment.getSubject());
+            
+            boolean isDuplicate = false;
+            if (existing != null) {
+                for (ClassAssignment cls : existing) {
+                    // If we are creating new (id is null) or updating a different record
+                    if (assignment.getId() == null || !cls.getId().equals(assignment.getId())) {
+                        isDuplicate = true;
+                        break;
+                    }
+                }
+            }
+
+            if (isDuplicate) {
+                response.put("status", "failed");
+                response.put("message", "already exist");
+                return ResponseEntity.ok(response);
+            }
+
             // MongoDB .save() handles both Insert and Update (if ID is present)
             repository.save(assignment);
             response.put("status", "pass");

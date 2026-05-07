@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"}, allowCredentials = "true")
@@ -56,6 +58,24 @@ public class NotificationController {
                             mutableDates.add(notification.getNewDate());
                         }
                         assignment.setSelectedDates(mutableDates);
+                        
+                        // Add to rescheduledSlots tracking
+                        List<Map<String, String>> slots = assignment.getRescheduledSlots();
+                        if (slots == null) {
+                            slots = new ArrayList<>();
+                        }
+                        
+                        Map<String, String> newSlot = new HashMap<>();
+                        newSlot.put("date", notification.getNewDate());
+                        newSlot.put("startTime", notification.getNewStartTime());
+                        newSlot.put("endTime", notification.getNewEndTime());
+                        
+                        // Prevent duplicates in rescheduledSlots if same date is rescheduled multiple times (keep latest)
+                        slots.removeIf(s -> s.get("date").equals(notification.getNewDate()));
+                        slots.add(newSlot);
+                        
+                        assignment.setRescheduledSlots(slots);
+
                         assignmentRepository.save(assignment);
                     }
                 }

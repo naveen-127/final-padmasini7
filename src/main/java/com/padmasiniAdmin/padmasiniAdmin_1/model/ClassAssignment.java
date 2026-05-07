@@ -3,6 +3,7 @@ package com.padmasiniAdmin.padmasiniAdmin_1.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
+import java.util.Map;
 
 @Document(collection = "classAssignments")
 public class ClassAssignment {
@@ -20,6 +21,7 @@ public class ClassAssignment {
     private String mode;
     private String meetLink;
     private String status;
+    private List<Map<String, String>> rescheduledSlots; // [{date: "...", startTime: "...", endTime: "..."}]
     private List<String> selectedStudents;
 
     // Getters and Setters
@@ -61,6 +63,9 @@ public class ClassAssignment {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public List<Map<String, String>> getRescheduledSlots() { return rescheduledSlots; }
+    public void setRescheduledSlots(List<Map<String, String>> rescheduledSlots) { this.rescheduledSlots = rescheduledSlots; }
 
     public List<String> getSelectedStudents() { return selectedStudents; }
     public void setSelectedStudents(List<String> selectedStudents) { this.selectedStudents = selectedStudents; }

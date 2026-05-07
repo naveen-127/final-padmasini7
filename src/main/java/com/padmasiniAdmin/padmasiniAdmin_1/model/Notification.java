@@ -14,6 +14,8 @@ public class Notification {
     private String teacherName;
     private String oldDate;
     private String newDate;
+    private String newStartTime;
+    private String newEndTime;
     private String status; // "PENDING", "ACCEPTED", "DECLINED"
     private String message;
 
@@ -40,6 +42,12 @@ public class Notification {
 
     public String getNewDate() { return newDate; }
     public void setNewDate(String newDate) { this.newDate = newDate; }
+
+    public String getNewStartTime() { return newStartTime; }
+    public void setNewStartTime(String newStartTime) { this.newStartTime = newStartTime; }
+
+    public String getNewEndTime() { return newEndTime; }
+    public void setNewEndTime(String newEndTime) { this.newEndTime = newEndTime; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
