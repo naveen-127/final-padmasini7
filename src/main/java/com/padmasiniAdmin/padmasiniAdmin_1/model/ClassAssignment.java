@@ -21,8 +21,28 @@ public class ClassAssignment {
     private String mode;
     private String meetLink;
     private String status;
-    private List<Map<String, String>> rescheduledSlots; // [{date: "...", startTime: "...", endTime: "..."}]
+    private List<RescheduledSlot> rescheduledSlots; // List of slots that were rescheduled
     private List<String> selectedStudents;
+
+    public static class RescheduledSlot {
+        private String date;
+        private String startTime;
+        private String endTime;
+
+        public RescheduledSlot() {}
+        public RescheduledSlot(String date, String startTime, String endTime) {
+            this.date = date;
+            this.startTime = startTime;
+            this.endTime = endTime;
+        }
+
+        public String getDate() { return date; }
+        public void setDate(String date) { this.date = date; }
+        public String getStartTime() { return startTime; }
+        public void setStartTime(String startTime) { this.startTime = startTime; }
+        public String getEndTime() { return endTime; }
+        public void setEndTime(String endTime) { this.endTime = endTime; }
+    }
 
     // Getters and Setters
     public String getId() { return id; }
@@ -64,8 +84,8 @@ public class ClassAssignment {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
-    public List<Map<String, String>> getRescheduledSlots() { return rescheduledSlots; }
-    public void setRescheduledSlots(List<Map<String, String>> rescheduledSlots) { this.rescheduledSlots = rescheduledSlots; }
+    public List<RescheduledSlot> getRescheduledSlots() { return rescheduledSlots; }
+    public void setRescheduledSlots(List<RescheduledSlot> rescheduledSlots) { this.rescheduledSlots = rescheduledSlots; }
 
     public List<String> getSelectedStudents() { return selectedStudents; }
     public void setSelectedStudents(List<String> selectedStudents) { this.selectedStudents = selectedStudents; }

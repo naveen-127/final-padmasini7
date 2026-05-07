@@ -60,18 +60,19 @@ public class NotificationController {
                         assignment.setSelectedDates(mutableDates);
                         
                         // Add to rescheduledSlots tracking
-                        List<Map<String, String>> slots = assignment.getRescheduledSlots();
+                        List<ClassAssignment.RescheduledSlot> slots = assignment.getRescheduledSlots();
                         if (slots == null) {
                             slots = new ArrayList<>();
                         }
                         
-                        Map<String, String> newSlot = new HashMap<>();
-                        newSlot.put("date", notification.getNewDate());
-                        newSlot.put("startTime", notification.getNewStartTime());
-                        newSlot.put("endTime", notification.getNewEndTime());
+                        ClassAssignment.RescheduledSlot newSlot = new ClassAssignment.RescheduledSlot(
+                            notification.getNewDate(),
+                            notification.getNewStartTime(),
+                            notification.getNewEndTime()
+                        );
                         
                         // Prevent duplicates in rescheduledSlots if same date is rescheduled multiple times (keep latest)
-                        slots.removeIf(s -> s.get("date").equals(notification.getNewDate()));
+                        slots.removeIf(s -> s.getDate().equals(notification.getNewDate()));
                         slots.add(newSlot);
                         
                         assignment.setRescheduledSlots(slots);
