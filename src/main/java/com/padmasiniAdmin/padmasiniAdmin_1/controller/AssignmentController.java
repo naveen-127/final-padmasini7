@@ -21,16 +21,23 @@ public class AssignmentController {
     public ResponseEntity<Map<String, String>> assignClass(@RequestBody ClassAssignment assignment) {
         Map<String, String> response = new HashMap<>();
         try {
-            // Check for existing batch with same name and subject
-            List<ClassAssignment> existing = repository.findByBatchNameAndSubject(assignment.getBatchName(), assignment.getSubject());
+            // Check for existing batch with same name and subject (normalized)
+            List<ClassAssignment> all = repository.findAll();
+            String normNewName = assignment.getBatchName() != null ? assignment.getBatchName().replaceAll("\\s+", "").toLowerCase() : "";
+            String normNewSubject = assignment.getSubject() != null ? assignment.getSubject().replaceAll("\\s+", "").toLowerCase() : "";
             
             boolean isDuplicate = false;
-            if (existing != null) {
-                for (ClassAssignment cls : existing) {
-                    // If we are creating new (id is null) or updating a different record
-                    if (assignment.getId() == null || !cls.getId().equals(assignment.getId())) {
-                        isDuplicate = true;
-                        break;
+            if (all != null) {
+                for (ClassAssignment cls : all) {
+                    String normExtName = cls.getBatchName() != null ? cls.getBatchName().replaceAll("\\s+", "").toLowerCase() : "";
+                    String normExtSubject = cls.getSubject() != null ? cls.getSubject().replaceAll("\\s+", "").toLowerCase() : "";
+                    
+                    if (normNewName.equals(normExtName) && normNewSubject.equals(normExtSubject)) {
+                        // If creating new (id is null) or updating a different record
+                        if (assignment.getId() == null || !cls.getId().equals(assignment.getId())) {
+                            isDuplicate = true;
+                            break;
+                        }
                     }
                 }
             }
