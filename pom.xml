@@ -84,6 +84,13 @@
     <version>2.25.27</version> <!-- Same version as s3 -->
 </dependency>
 
+<!-- Add this inside <dependencies> tag -->
+<dependency>
+    <groupId>org.springframework.security</groupId>
+    <artifactId>spring-security-crypto</artifactId>
+    <version>5.7.10</version>
+</dependency>
+
  
 
 	</dependencies>

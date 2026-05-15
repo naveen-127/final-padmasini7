@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.padmasiniAdmin.padmasiniAdmin_1.manageUser.UserModel;
 import com.padmasiniAdmin.padmasiniAdmin_1.model.UserDetails;
 import com.padmasiniAdmin.padmasiniAdmin_1.service.SignInService;
+import com.padmasiniAdmin.padmasiniAdmin_1.utils.PasswordEncoder;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +29,9 @@ public class SignINController {
     @Autowired 
     private SignInService signInService;
     
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    
     @GetMapping("/UserSubjectStd")
     public Map<String,List<String>> getsubject(HttpSession session) {
         Map<String , List<String>> map = new HashMap<>();
@@ -40,40 +44,48 @@ public class SignINController {
     
     @PostMapping("/signIn")
     public ResponseEntity<?> signIn(@RequestBody UserDetails user, HttpSession session) {
-        System.out.println("checking password");
+        System.out.println("=== SIGNIN CONTROLLER ===");
+        System.out.println("Login attempt for: " + user.getUserName());
         Map<String, Object> map = new HashMap<>();
-        UserModel checkUser1 = signInService.checkUserName(user.getUserName(), user.getPassword());
-        UserModel checkUser2 = signInService.checkUserGmail(user.getUserName(), user.getPassword());
         
-        if (checkUser1 == null && checkUser2 == null) {
+        // IMPORTANT: Use the check methods that verify password and auto-migrate
+        UserModel authenticatedUser = signInService.checkUserName(user.getUserName(), user.getPassword());
+        
+        if (authenticatedUser == null) {
+            authenticatedUser = signInService.checkUserGmail(user.getUserName(), user.getPassword());
+        }
+        
+        if (authenticatedUser == null) {
+            System.out.println("❌ Login failed for: " + user.getUserName());
             map.put("status", "failed");
+            map.put("message", "Invalid username/email or password");
         } else {
-            UserModel userr = (checkUser1 == null) ? checkUser2 : checkUser1;
+            System.out.println("✅ Login successful for: " + authenticatedUser.getUserName());
             
             // Return ALL user data in response for frontend storage
             map.put("status", "pass");
-            map.put("userName", userr.getUserName());
-            map.put("userGmail", userr.getGmail());
-            map.put("phoneNumber", userr.getPhoneNumber());
-            map.put("role", userr.getRole());
-            map.put("coursetype", userr.getCoursetype());
-            map.put("courseName", userr.getCourseName());
-            map.put("subjects", userr.getSubjects());
-            map.put("standards", userr.getStandards());
-            map.put("id", userr.getId());
+            map.put("userName", authenticatedUser.getUserName());
+            map.put("userGmail", authenticatedUser.getGmail());
+            map.put("phoneNumber", authenticatedUser.getPhoneNumber());
+            map.put("role", authenticatedUser.getRole());
+            map.put("coursetype", authenticatedUser.getCoursetype());
+            map.put("courseName", authenticatedUser.getCourseName());
+            map.put("subjects", authenticatedUser.getSubjects());
+            map.put("standards", authenticatedUser.getStandards());
+            map.put("id", authenticatedUser.getId());
             
             // Set session for server-side operations
-            session.setAttribute("user", userr.getUserName());
-            session.setAttribute("id", userr.getId());
-            session.setAttribute("phoneNumber", userr.getPhoneNumber());
-            session.setAttribute("gmail", userr.getGmail());
-            session.setAttribute("role", userr.getRole());
-            session.setAttribute("coursetype", userr.getCoursetype());
-            session.setAttribute("courseName", userr.getCourseName());
-            session.setAttribute("subjects", userr.getSubjects());
-            session.setAttribute("standards", userr.getStandards());
+            session.setAttribute("user", authenticatedUser.getUserName());
+            session.setAttribute("id", authenticatedUser.getId());
+            session.setAttribute("phoneNumber", authenticatedUser.getPhoneNumber());
+            session.setAttribute("gmail", authenticatedUser.getGmail());
+            session.setAttribute("role", authenticatedUser.getRole());
+            session.setAttribute("coursetype", authenticatedUser.getCoursetype());
+            session.setAttribute("courseName", authenticatedUser.getCourseName());
+            session.setAttribute("subjects", authenticatedUser.getSubjects());
+            session.setAttribute("standards", authenticatedUser.getStandards());
             
-            System.out.println("Session Attribute 'user': " + session.getAttribute("user"));
+            System.out.println("Session attributes set for user: " + authenticatedUser.getUserName());
         }
         
         return ResponseEntity.ok(map);
@@ -81,7 +93,7 @@ public class SignINController {
     
     @GetMapping("/logout")
     public ResponseEntity<?> logout(HttpSession session, HttpServletResponse response) {
-        System.out.println("inside logout" + session.getAttribute("userName"));
+        System.out.println("inside logout" + session.getAttribute("user"));
         if(session.getAttribute("user") != null) {
             session.invalidate();
             Cookie cookie = new Cookie("user", null);

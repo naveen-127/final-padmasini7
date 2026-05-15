@@ -11,11 +11,15 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import com.mongodb.client.MongoClient;
+import com.padmasiniAdmin.padmasiniAdmin_1.utils.PasswordEncoder;
 
 @Service
 public class UserService {
     @Autowired
     private MongoClient mongoClient;
+    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     
     String dbName = "users";
     String collectionName = "users";
@@ -24,6 +28,25 @@ public class UserService {
         // Check if user already exists
         if(!checkGmail(user.getUser().getGmail())) {
             UserModel userModel = user.getUser();
+            
+            // ========== PASSWORD ENCRYPTION - FIXED ==========
+            String originalPassword = userModel.getPassword();
+            System.out.println("Original password before encryption: " + originalPassword);
+            
+            if (originalPassword != null && !originalPassword.isEmpty()) {
+                // Always encrypt if it's not already a BCrypt hash
+                if (!originalPassword.startsWith("$2")) {
+                    String hashedPassword = passwordEncoder.encodePassword(originalPassword);
+                    userModel.setPassword(hashedPassword);
+                    System.out.println("✅ Password ENCRYPTED for user: " + userModel.getGmail());
+                    System.out.println("   Hash: " + hashedPassword);
+                } else {
+                    System.out.println("Password already hashed, keeping as is");
+                }
+            } else {
+                System.out.println("⚠️ No password provided for user: " + userModel.getGmail());
+            }
+            // =================================================
             
             // Get role from user model
             String role = userModel.getRole();
@@ -56,6 +79,7 @@ public class UserService {
             System.out.println("  Subjects: " + userModel.getSubjects());
             System.out.println("  Standards: " + userModel.getStandards());
             System.out.println("  Phone: " + userModel.getPhoneNumber());
+            System.out.println("  Password stored (encrypted): " + userModel.getPassword());
             
             MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbName);
             mongoTemplate.save(userModel, collectionName);
@@ -181,17 +205,29 @@ public class UserService {
             List<UserModel> allUsers = mongoTemplate.findAll(UserModel.class, collectionName);
             
             int updatedCount = 0;
+            int passwordMigratedCount = 0;
+            
             for (UserModel user : allUsers) {
                 boolean needsUpdate = false;
                 String courseName = user.getCourseName();
-                String role = user.getRole() != null ? user.getRole() : "student"; // Default to student if role is null
+                String role = user.getRole() != null ? user.getRole() : "student";
+                
+                // Migrate plain text passwords to hashed
+                String password = user.getPassword();
+                if (password != null && !password.isEmpty() && !password.startsWith("$2")) {
+                    String hashedPassword = passwordEncoder.encodePassword(password);
+                    user.setPassword(hashedPassword);
+                    needsUpdate = true;
+                    passwordMigratedCount++;
+                    System.out.println("Migrated password for: " + user.getGmail());
+                }
                 
                 // Update subjects if empty
                 if (courseName != null && (user.getSubjects() == null || user.getSubjects().isEmpty())) {
                     List<String> defaultSubjects = getDefaultSubjects(courseName, role);
                     user.setSubjects(defaultSubjects);
                     needsUpdate = true;
-                    System.out.println("Setting default subjects for " + user.getGmail() + " (role: " + role + "): " + defaultSubjects);
+                    System.out.println("Setting default subjects for " + user.getGmail());
                 }
                 
                 // Update standards if empty
@@ -199,14 +235,14 @@ public class UserService {
                     List<String> defaultStandards = getDefaultStandards(courseName, role);
                     user.setStandards(defaultStandards);
                     needsUpdate = true;
-                    System.out.println("Setting default standards for " + user.getGmail() + " (role: " + role + "): " + defaultStandards);
+                    System.out.println("Setting default standards for " + user.getGmail());
                 }
                 
                 // Update role for existing users if not set
                 if (user.getRole() == null || user.getRole().isEmpty()) {
                     user.setRole("student");
                     needsUpdate = true;
-                    System.out.println("Setting default role for " + user.getGmail() + ": student");
+                    System.out.println("Setting default role for " + user.getGmail());
                 }
                 
                 if (needsUpdate) {
@@ -216,6 +252,7 @@ public class UserService {
             }
             
             System.out.println("Migration completed. Updated " + updatedCount + " users.");
+            System.out.println("Password migration completed. Hashed " + passwordMigratedCount + " passwords.");
         } catch (Exception e) {
             System.err.println("Error during migration: " + e.getMessage());
             e.printStackTrace();
