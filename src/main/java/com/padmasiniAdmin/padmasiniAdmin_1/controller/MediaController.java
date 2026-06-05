@@ -20,6 +20,24 @@ public class MediaController {
     @Autowired
     private MediaService mediaService;
     
+    
+    @GetMapping("/migrateToPermanentUrls")
+    public ResponseEntity<?> migrateToPermanentUrls() {
+        try {
+            List<MediaItem> migratedMedia = mediaService.migrateToPermanentUrls();
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "Successfully migrated " + migratedMedia.size() + " media items");
+            response.put("count", migratedMedia.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("status", "error");
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+    
     @PostMapping("/uploadMedia")
     public ResponseEntity<?> uploadMedia(
             @RequestParam("media") List<MultipartFile> media,
