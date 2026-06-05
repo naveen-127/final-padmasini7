@@ -38,25 +38,25 @@ public class S3Service {
             String uniqueFilename = UUID.randomUUID().toString() + fileExtension;
             String s3Key = folder + uniqueFilename;
             
-            // Upload to S3 with PUBLIC READ access (THIS IS THE KEY CHANGE)
+            // ✅ REMOVE the .acl() line - your bucket doesn't support ACLs
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(s3Key)
                     .contentType(file.getContentType())
-                    .acl(ObjectCannedACL.PUBLIC_READ)  // ✅ ADD THIS LINE - Makes file public
+                    // .acl(ObjectCannedACL.PUBLIC_READ)  // ❌ REMOVE THIS LINE - Causes error
                     .build();
             
             s3Client.putObject(putObjectRequest, 
                 RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
             
-            // ✅ GENERATE PERMANENT URL (never expires) - REPLACE the presigned URL method
+            // ✅ GENERATE PERMANENT URL (never expires)
             String permanentUrl = String.format("https://%s.s3.%s.amazonaws.com/%s", 
                 bucketName, region, s3Key);
             
             // Create MediaItem with PERMANENT URL
             MediaItem mediaItem = new MediaItem();
             mediaItem.setFilename(originalFilename);
-            mediaItem.setUrl(permanentUrl);  // ✅ NOW USING PERMANENT URL
+            mediaItem.setUrl(permanentUrl);
             mediaItem.setS3Key(s3Key);
             mediaItem.setType(type);
             mediaItem.setSize(file.getSize());
@@ -68,9 +68,6 @@ public class S3Service {
         
         return uploadedItems;
     }
-    
-    // ✅ REMOVE or COMMENT OUT the generatePresignedUrl method - no longer needed
-    // private String generatePresignedUrl(String s3Key) { ... }
     
     public void deleteFile(String s3Key) {
         try {
