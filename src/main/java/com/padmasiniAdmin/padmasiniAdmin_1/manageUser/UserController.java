@@ -1036,6 +1036,13 @@ public class UserController {
                     String percentage = percentageObj != null ? percentageObj.toString() : "0";
                     Date timestamp = latestAttempt.getDate("timestamp");
                     
+                    // 🔥 FIX: Get the actual status from the database
+                    String dbStatus = latestAttempt.getString("status");
+                    // If status is null, compute it as fallback
+                    if (dbStatus == null) {
+                        dbStatus = (scoreScored >= totalMarks / 2) ? "pass" : "fail";
+                    }
+                    
                     totalQuestions += totalMarks;
                     totalCorrect += correct;
                     totalWrong += wrong;
@@ -1086,7 +1093,7 @@ public class UserController {
                         }
                     }
                     
-                    // Build all attempts data
+                    // Build all attempts data with their statuses
                     List<Map<String, Object>> allAttempts = new ArrayList<>();
                     if (attempts != null) {
                         for (Document attempt : attempts) {
@@ -1097,6 +1104,8 @@ public class UserController {
                             attemptData.put("wrongCount", attempt.getInteger("wrongAnswers", 0));
                             attemptData.put("unattendedCount", attempt.getInteger("unattended", 0));
                             attemptData.put("timestamp", attempt.getDate("timestamp"));
+                            // 🔥 FIX: Include status for each attempt
+                            attemptData.put("status", attempt.getString("status"));
                             
                             // Get unit breakdown for each attempt
                             Document attemptUnitBreakdown = (Document) attempt.get("unitBreakdown");
@@ -1152,7 +1161,8 @@ public class UserController {
                     assessment.put("wrongCount", wrong);
                     assessment.put("unattendedCount", unattended);
                     assessment.put("percentage", percentage);
-                    assessment.put("status", (scoreScored >= totalMarks / 2) ? "Passed" : "Failed");
+                    // 🔥 FIX: Use the database status instead of computed value
+                    assessment.put("status", dbStatus);
                     assessment.put("timestamp", timestamp);
                     assessment.put("unitBreakdown", unitsData);
                     assessment.put("attempts", allAttempts);
@@ -1160,7 +1170,7 @@ public class UserController {
                     
                     assessmentsList.add(assessment);
                     
-                    // Track topic performance
+                    // Track topic performance (keep this logic)
                     double topicPercentage = totalMarks > 0 ? (scoreScored * 100.0 / totalMarks) : 0;
                     if (!topicPerformance.containsKey(topicName)) {
                         Map<String, Object> topicStats = new HashMap<>();
@@ -1171,7 +1181,7 @@ public class UserController {
                         topicStats.put("avgPercentage", topicPercentage);
                         topicStats.put("bestPercentage", topicPercentage);
                         topicStats.put("worstPercentage", topicPercentage);
-                        topicStats.put("status", (scoreScored >= totalMarks / 2) ? "Passed" : "Failed");
+                        topicStats.put("status", dbStatus); // Use actual status
                         topicPerformance.put(topicName, topicStats);
                     } else {
                         Map<String, Object> topicStats = (Map<String, Object>) topicPerformance.get(topicName);
