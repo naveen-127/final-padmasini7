@@ -12,47 +12,51 @@ public class MCQTest {
 
     @Id
     private String id;
-
     private String question;
     private List<String> questionImages = new ArrayList<>();
-
     private String option1;
     private String option1Image;
-
     private String option2;
     private String option2Image;
-
     private String option3;
     private String option3Image;
-
     private String option4;
     private String option4Image;
-
     private String explanation;
     private List<String> solutionImages = new ArrayList<>();
-
     private int correctIndex;
-    
-    // ✅ ADD THESE FIELDS FOR TABLE DATA
     private int rows;
     private int cols;
     private List<List<String>> tableData = new ArrayList<>();
-    
     private List<String> tags = new ArrayList<>();
 
     public MCQTest() {
         this.id = new ObjectId().toHexString();
     }
 
-    // getters & setters for ALL fields
+    // ----- Null‑safe Getters -----
+    public List<String> getQuestionImages() {
+        return questionImages == null ? new ArrayList<>() : questionImages;
+    }
+
+    public List<String> getSolutionImages() {
+        return solutionImages == null ? new ArrayList<>() : solutionImages;
+    }
+
+    public List<List<String>> getTableData() {
+        return tableData == null ? new ArrayList<>() : tableData;
+    }
+
+    public List<String> getTags() {
+        return tags == null ? new ArrayList<>() : tags;
+    }
+
+    // ----- Other getters/setters -----
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
     public String getQuestion() { return question; }
     public void setQuestion(String question) { this.question = question; }
-
-    public List<String> getQuestionImages() { return questionImages; }
-    public void setQuestionImages(List<String> questionImages) { this.questionImages = questionImages; }
 
     public String getOption1() { return option1; }
     public void setOption1(String option1) { this.option1 = option1; }
@@ -81,22 +85,29 @@ public class MCQTest {
     public String getExplanation() { return explanation; }
     public void setExplanation(String explanation) { this.explanation = explanation; }
 
-    public List<String> getSolutionImages() { return solutionImages; }
-    public void setSolutionImages(List<String> solutionImages) { this.solutionImages = solutionImages; }
-
     public int getCorrectIndex() { return correctIndex; }
     public void setCorrectIndex(Object object) { this.correctIndex = (int) object; }
 
-    // ✅ ADD GETTERS/SETTERS FOR TABLE FIELDS
     public int getRows() { return rows; }
     public void setRows(int rows) { this.rows = rows; }
 
     public int getCols() { return cols; }
     public void setCols(int cols) { this.cols = cols; }
 
-    public List<List<String>> getTableData() { return tableData; }
-    public void setTableData(List<List<String>> tableData) { this.tableData = tableData; }
-    
-    public List<String> getTags() { return tags; }
-    public void setTags(List<String> tags) { this.tags = tags; }
+    // ----- Setters with null safety -----
+    public void setQuestionImages(List<String> questionImages) {
+        this.questionImages = questionImages != null ? questionImages : new ArrayList<>();
+    }
+
+    public void setSolutionImages(List<String> solutionImages) {
+        this.solutionImages = solutionImages != null ? solutionImages : new ArrayList<>();
+    }
+
+    public void setTableData(List<List<String>> tableData) {
+        this.tableData = tableData != null ? tableData : new ArrayList<>();
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags != null ? tags : new ArrayList<>();
+    }
 }

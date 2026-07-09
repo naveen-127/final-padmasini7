@@ -12,6 +12,16 @@ public class MotherMCQTest {
     private List<MCQTest> questionsList = new ArrayList<>();
     private List<String> tags = new ArrayList<>();
 
+    // ----- Null‑safe Getters -----
+    public List<MCQTest> getQuestionsList() {
+        return questionsList == null ? new ArrayList<>() : questionsList;
+    }
+
+    public List<String> getTags() {
+        return tags == null ? new ArrayList<>() : tags;
+    }
+
+    // ----- Other getters/setters -----
     public String getTestName() { return testName; }
     public void setTestName(String testName) { this.testName = testName; }
 
@@ -21,14 +31,17 @@ public class MotherMCQTest {
     public String getSubjectName() { return subjectName; }
     public void setSubjectName(String subjectName) { this.subjectName = subjectName; }
 
-    public List<MCQTest> getQuestionsList() { return questionsList; }
-    public void setQuestionsList(List<MCQTest> questionsList) { this.questionsList = questionsList; }
-
     public String getUnitName() { return unitName; }
     public void setUnitName(String unitName) { this.unitName = unitName; }
 
-    public List<String> getTags() { return tags; }
-    public void setTags(List<String> tags) { this.tags = tags; }
+    // ----- Setters with null safety -----
+    public void setQuestionsList(List<MCQTest> questionsList) {
+        this.questionsList = questionsList != null ? questionsList : new ArrayList<>();
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags != null ? tags : new ArrayList<>();
+    }
 
     @Override
     public String toString() {
@@ -37,7 +50,7 @@ public class MotherMCQTest {
                 ", marks=" + marks +
                 ", subjectName='" + subjectName + '\'' +
                 ", unitName='" + unitName + '\'' +
-                ", tags=" + tags + 
+                ", tags=" + tags +
                 ", questions=" + (questionsList != null ? questionsList.size() : 0) +
                 '}';
     }
