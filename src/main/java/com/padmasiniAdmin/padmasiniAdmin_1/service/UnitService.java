@@ -207,32 +207,43 @@
 	        return false;
 	    }
 	
+	 // ==========================================
+	    // REPLACEMENT 1: getAllUnit
+	    // ==========================================
 	    public List<UnitRequest> getAllUnit(String dbName, String subjectName, String standard) {
 	        MongoTemplate mongoTemplate = getTemplate(dbName);
 	        Query query = new Query(Criteria.where("standard").is(standard));
-	        List<UnitRequest> units = mongoTemplate.find(query, UnitRequest.class, subjectName);
 	        
-	        // Ensure all units have proper structure
-	        if (units != null) {
-	            for (UnitRequest unit : units) {
-	                ensureUnitStructure(unit);
+	        // 1. Fetch raw documents first to prevent a single bad doc from crashing the query
+	        List<org.bson.Document> rawDocs = mongoTemplate.find(query, org.bson.Document.class, subjectName);
+	        List<UnitRequest> units = new ArrayList<>();
+	        
+	        // 2. Map them one-by-one safely
+	        for (org.bson.Document doc : rawDocs) {
+	            try {
+	                UnitRequest unit = mongoTemplate.getConverter().read(UnitRequest.class, doc);
+	                if (unit != null) {
+	                    ensureUnitStructure(unit);
+	                    units.add(unit);
+	                }
+	            } catch (Exception e) {
+	                // If one document is corrupted, skip it and keep loading the rest!
+	                System.err.println("⚠️ SKIPPING CORRUPTED DOCUMENT: " + doc.get("unitName") + " | Reason: " + e.getMessage());
 	            }
 	        }
 	        
-	        System.out.println("🔍 Found " + (units != null ? units.size() : 0) + 
-	                          " units for " + subjectName + " with standard: " + standard);
-	        
-	        return units != null ? units : new ArrayList<>();
+	        System.out.println("🔍 Successfully loaded " + units.size() + " out of " + rawDocs.size() + " units for " + subjectName);
+	        return units;
 	    }
-	    
-	 // Update your getAllUnitWithoutStandard method to properly handle special subjects
+
+	    // ==========================================
+	    // REPLACEMENT 2: getAllUnitWithoutStandard
+	    // ==========================================
 	    public List<UnitRequest> getAllUnitWithoutStandard(String dbName, String subjectName) {
 	        MongoTemplate mongoTemplate = getTemplate(dbName);
 	        
-	        // Define subjects that don't require standard
 	        List<String> subjectsWithoutStandard = Arrays.asList("NEET Previous Questions", "Formulas");
 	        
-	        // ✅ FIX: Decode subject name if needed
 	        String decodedSubjectName;
 	        try {
 	            decodedSubjectName = java.net.URLDecoder.decode(subjectName, "UTF-8");
@@ -242,23 +253,29 @@
 	        
 	        System.out.println("🔍 getAllUnitWithoutStandard called for: " + decodedSubjectName);
 	        
-	        // Always return all units for these subjects
 	        Query query = new Query();
-	        List<UnitRequest> units = mongoTemplate.find(query, UnitRequest.class, subjectName);
 	        
-	        System.out.println("🔍 Found " + (units != null ? units.size() : 0) + 
-	                          " units for " + subjectName + " (no standard filter)");
+	        // 1. Fetch raw documents first
+	        List<org.bson.Document> rawDocs = mongoTemplate.find(query, org.bson.Document.class, subjectName);
+	        List<UnitRequest> units = new ArrayList<>();
 	        
-	        // Ensure all units have proper structure
-	        if (units != null) {
-	            for (UnitRequest unit : units) {
-	                ensureUnitStructure(unit);
-	                // ✅ IMPORTANT: For special subjects, ensure isLesson is true
-	                unit.setIsLesson(true);
+	        // 2. Map them one-by-one safely
+	        for (org.bson.Document doc : rawDocs) {
+	            try {
+	                UnitRequest unit = mongoTemplate.getConverter().read(UnitRequest.class, doc);
+	                if (unit != null) {
+	                    ensureUnitStructure(unit);
+	                    unit.setIsLesson(true);
+	                    units.add(unit);
+	                }
+	            } catch (Exception e) {
+	                // If one document is corrupted, skip it and keep loading the rest!
+	                System.err.println("⚠️ SKIPPING CORRUPTED DOCUMENT: " + doc.get("unitName") + " | Reason: " + e.getMessage());
 	            }
 	        }
 	        
-	        return units != null ? units : new ArrayList<>();
+	        System.out.println("🔍 Successfully loaded " + units.size() + " out of " + rawDocs.size() + " units for " + subjectName);
+	        return units;
 	    }
 	    
 	    // Helper method to ensure unit has proper structure
