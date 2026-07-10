@@ -53,5 +53,15 @@
 			<attribute name="test" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/NAVEEN/.m2/repository/net/bytebuddy/byte-buddy/1.15.11/byte-buddy-1.15.11.jar" sourcepath="C:/Users/NAVEEN/.m2/repository/net/bytebuddy/byte-buddy/1.15.11/byte-buddy-1.15.11-sources.jar">
+		<attributes>
+			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="test" value="true"/>
+			<attribute name="maven.groupId" value="net.bytebuddy"/>
+			<attribute name="maven.artifactId" value="byte-buddy"/>
+			<attribute name="maven.version" value="1.15.11"/>
+			<attribute name="maven.scope" value="test"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

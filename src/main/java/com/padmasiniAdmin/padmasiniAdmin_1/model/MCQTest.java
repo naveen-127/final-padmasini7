@@ -86,8 +86,26 @@ public class MCQTest {
     public void setExplanation(String explanation) { this.explanation = explanation; }
 
     public int getCorrectIndex() { return correctIndex; }
-    public void setCorrectIndex(Object object) { this.correctIndex = (int) object; }
-
+    public void setCorrectIndex(Object object) {
+        if (object == null) {
+            this.correctIndex = 0;
+            return;
+        }
+        
+        if (object instanceof Number) {
+            // Safely handles Integer, Double, Long, etc.
+            this.correctIndex = ((Number) object).intValue();
+        } else if (object instanceof String) {
+            // Safely handles stringified numbers like "2"
+            try {
+                this.correctIndex = Integer.parseInt((String) object);
+            } catch (NumberFormatException e) {
+                this.correctIndex = 0; // Fallback for invalid strings
+            }
+        } else {
+            this.correctIndex = 0; // Final fallback
+        }
+    }
     public int getRows() { return rows; }
     public void setRows(int rows) { this.rows = rows; }
 

@@ -28,12 +28,24 @@ public class UnitController {
     @Autowired
     private MongoTemplate mongoTemplate; // Add this
 
-@GetMapping("/getAllUnits/{dbname}/{subjectName}/{standard}")
-    public List<UnitRequest> getUnitsBySubject(@PathVariable String dbname,
+    @GetMapping("/getAllUnits/{dbname}/{subjectName}/{standard}")
+    public ResponseEntity<?> getUnitsBySubject(@PathVariable String dbname,
                                                @PathVariable String subjectName,
                                                @PathVariable String standard) {
-        List<UnitRequest> units = unitService.getAllUnit(dbname, subjectName, standard);
-        return units != null ? units : new ArrayList<>();
+        try {
+            List<UnitRequest> units = unitService.getAllUnit(dbname, subjectName, standard);
+            return ResponseEntity.ok(units != null ? units : new ArrayList<>());
+        } catch (Exception e) {
+            // Print the exact error causing the crash to your backend terminal
+            System.err.println("❌ Error fetching units for " + subjectName + ": " + e.getMessage());
+            e.printStackTrace();
+            
+            // Return a readable JSON error to the frontend instead of a blank 500
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("status", "error");
+            errorResponse.put("message", "Failed to map DB documents: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
     }
 
 
