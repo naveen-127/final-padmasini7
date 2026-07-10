@@ -36,14 +36,14 @@ public class UnitController {
             List<UnitRequest> units = unitService.getAllUnit(dbname, subjectName, standard);
             return ResponseEntity.ok(units != null ? units : new ArrayList<>());
         } catch (Exception e) {
-            // Print the exact error causing the crash to your backend terminal
-            System.err.println("❌ Error fetching units for " + subjectName + ": " + e.getMessage());
+            // This will print the EXACT failing field to your backend terminal
+            System.err.println("❌ FATAL MAPPING ERROR IN " + subjectName + " (Std " + standard + "):");
             e.printStackTrace();
             
-            // Return a readable JSON error to the frontend instead of a blank 500
+            // This will send the exact error message to your browser console
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("status", "error");
-            errorResponse.put("message", "Failed to map DB documents: " + e.getMessage());
+            errorResponse.put("message", "Database Mapping Error: " + e.getMessage());
             return ResponseEntity.status(500).body(errorResponse);
         }
     }

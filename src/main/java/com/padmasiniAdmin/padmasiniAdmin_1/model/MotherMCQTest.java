@@ -6,7 +6,7 @@ import java.util.List;
 public class MotherMCQTest {
 
     private String testName;
-    private int marks;
+    private Integer marks = 0;
     private String subjectName;
     private String unitName;
     private List<MCQTest> questionsList = new ArrayList<>();
@@ -25,8 +25,8 @@ public class MotherMCQTest {
     public String getTestName() { return testName; }
     public void setTestName(String testName) { this.testName = testName; }
 
-    public int getMarks() { return marks; }
-    public void setMarks(int marks) { this.marks = marks; }
+    public Integer getMarks() { return marks; }
+    public void setMarks(Integer marks) { this.marks = marks != null ? marks : 0; }
 
     public String getSubjectName() { return subjectName; }
     public void setSubjectName(String subjectName) { this.subjectName = subjectName; }

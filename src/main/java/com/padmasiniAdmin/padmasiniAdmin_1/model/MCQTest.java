@@ -24,9 +24,9 @@ public class MCQTest {
     private String option4Image;
     private String explanation;
     private List<String> solutionImages = new ArrayList<>();
-    private int correctIndex;
-    private int rows;
-    private int cols;
+    private Integer correctIndex = 0;
+    private Integer rows = 0;
+    private Integer cols = 0;
     private List<List<String>> tableData = new ArrayList<>();
     private List<String> tags = new ArrayList<>();
 
@@ -85,32 +85,27 @@ public class MCQTest {
     public String getExplanation() { return explanation; }
     public void setExplanation(String explanation) { this.explanation = explanation; }
 
-    public int getCorrectIndex() { return correctIndex; }
+    public Integer getCorrectIndex() { return correctIndex; }
     public void setCorrectIndex(Object object) {
         if (object == null) {
             this.correctIndex = 0;
             return;
         }
-        
         if (object instanceof Number) {
-            // Safely handles Integer, Double, Long, etc.
             this.correctIndex = ((Number) object).intValue();
         } else if (object instanceof String) {
-            // Safely handles stringified numbers like "2"
-            try {
-                this.correctIndex = Integer.parseInt((String) object);
-            } catch (NumberFormatException e) {
-                this.correctIndex = 0; // Fallback for invalid strings
-            }
+            try { this.correctIndex = Integer.parseInt((String) object); } 
+            catch (NumberFormatException e) { this.correctIndex = 0; }
         } else {
-            this.correctIndex = 0; // Final fallback
+            this.correctIndex = 0;
         }
     }
-    public int getRows() { return rows; }
-    public void setRows(int rows) { this.rows = rows; }
 
-    public int getCols() { return cols; }
-    public void setCols(int cols) { this.cols = cols; }
+    public Integer getRows() { return rows; }
+    public void setRows(Integer rows) { this.rows = rows != null ? rows : 0; }
+
+    public Integer getCols() { return cols; }
+    public void setCols(Integer cols) { this.cols = cols != null ? cols : 0; }
 
     // ----- Setters with null safety -----
     public void setQuestionImages(List<String> questionImages) {
