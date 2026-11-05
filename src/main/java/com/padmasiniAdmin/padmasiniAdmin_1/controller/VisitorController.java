@@ -4,7 +4,11 @@ import com.mongodb.client.MongoClient;
 import com.padmasiniAdmin.padmasiniAdmin_1.model.Visitor;
 import com.padmasiniAdmin.padmasiniAdmin_1.service.VisitorService;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.mongodb.client.result.DeleteResult;
+import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -95,9 +99,43 @@ public class VisitorController {
         }
     }
 
-    // Everything else (create/update/delete/search/byStatus) still uses visitorService as before,
-    // since those aren't part of your immediate bug — leave them unchanged unless you want them
-    // pointed at studentUsers too, in which case apply the same MongoTemplate pattern.
+    // Delete visitor — now uses the studentUsers database, same as the read endpoints
+    @DeleteMapping("/deleteVisitor/{id}")
+    public ResponseEntity<?> deleteVisitor(@PathVariable String id) {
+        try {
+            MongoTemplate studentUsersTemplate = new MongoTemplate(mongoClient, "studentUsers");
+
+            // _id may be stored as an ObjectId or as a plain string, so match both
+            Criteria criteria = Criteria.where("_id").is(id);
+            if (ObjectId.isValid(id)) {
+                criteria = new Criteria().orOperator(
+                        Criteria.where("_id").is(id),
+                        Criteria.where("_id").is(new ObjectId(id)));
+            }
+
+            // Passing only the collection name means values are matched as-is (no type conversion)
+            DeleteResult result = studentUsersTemplate.remove(new Query(criteria), "visitor");
+
+            if (result.getDeletedCount() == 0) {
+                Map<String, String> error = new HashMap<>();
+                error.put("status", "error");
+                error.put("message", "Visitor not found with id: " + id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+            }
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "Visitor deleted successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", "Failed to delete visitor: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    // The endpoints below still use visitorService (default database).
+    // Apply the same MongoTemplate pattern if you want them pointed at studentUsers too.
 
     @PostMapping("/createVisitor")
     public ResponseEntity<?> createVisitor(@RequestBody Visitor visitor) {
@@ -138,30 +176,6 @@ public class VisitorController {
             Map<String, String> error = new HashMap<>();
             error.put("status", "error");
             error.put("message", "Failed to update visitor: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
-        }
-    }
-
-    @DeleteMapping("/deleteVisitor/{id}")
-    public ResponseEntity<?> deleteVisitor(@PathVariable String id) {
-        try {
-            Optional<Visitor> existing = visitorService.getVisitorById(id);
-            if (existing.isPresent()) {
-                visitorService.deleteVisitor(id);
-                Map<String, String> response = new HashMap<>();
-                response.put("status", "success");
-                response.put("message", "Visitor deleted successfully");
-                return ResponseEntity.ok(response);
-            } else {
-                Map<String, String> error = new HashMap<>();
-                error.put("status", "error");
-                error.put("message", "Visitor not found with id: " + id);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-            }
-        } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("status", "error");
-            error.put("message", "Failed to delete visitor: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
