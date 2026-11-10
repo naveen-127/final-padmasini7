@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import com.mongodb.client.MongoClient;
@@ -17,242 +18,198 @@ import com.padmasiniAdmin.padmasiniAdmin_1.utils.PasswordEncoder;
 public class UserService {
     @Autowired
     private MongoClient mongoClient;
-    
+
     @Autowired
     private PasswordEncoder passwordEncoder;
-    
+
     String dbName = "users";
     String collectionName = "users";
-    
-    public boolean saveNewUser(UserDTO user) {
-        // Check if user already exists
-        if(!checkGmail(user.getUser().getGmail())) {
-            UserModel userModel = user.getUser();
-            
-            // ========== PASSWORD ENCRYPTION - FIXED ==========
-            String originalPassword = userModel.getPassword();
-            System.out.println("Original password before encryption: " + originalPassword);
-            
-            if (originalPassword != null && !originalPassword.isEmpty()) {
-                // Always encrypt if it's not already a BCrypt hash
-                if (!originalPassword.startsWith("$2")) {
-                    String hashedPassword = passwordEncoder.encodePassword(originalPassword);
-                    userModel.setPassword(hashedPassword);
-                    System.out.println("✅ Password ENCRYPTED for user: " + userModel.getGmail());
-                    System.out.println("   Hash: " + hashedPassword);
-                } else {
-                    System.out.println("Password already hashed, keeping as is");
-                }
-            } else {
-                System.out.println("⚠️ No password provided for user: " + userModel.getGmail());
-            }
-            // =================================================
-            
-            // Get role from user model
-            String role = userModel.getRole();
-            String courseName = userModel.getCourseName();
-            
-            // AUTO-POPULATE subjects and standards based on course if empty
-            if (courseName != null) {
-                // Check and populate subjects
-                if (userModel.getSubjects() == null || userModel.getSubjects().isEmpty()) {
-                    List<String> defaultSubjects = getDefaultSubjects(courseName, role);
-                    userModel.setSubjects(defaultSubjects);
-                    System.out.println("Auto-populated subjects for " + courseName + " (role: " + role + "): " + defaultSubjects);
-                }
-                
-                // Check and populate standards
-                if (userModel.getStandards() == null || userModel.getStandards().isEmpty()) {
-                    List<String> defaultStandards = getDefaultStandards(courseName, role);
-                    userModel.setStandards(defaultStandards);
-                    System.out.println("Auto-populated standards for " + courseName + " (role: " + role + "): " + defaultStandards);
-                }
-            }
-            
-            // Log the user being saved
-            System.out.println("Saving user:");
-            System.out.println("  Name: " + userModel.getUserName());
-            System.out.println("  Email: " + userModel.getGmail());
-            System.out.println("  Role: " + userModel.getRole());
-            System.out.println("  Course Type: " + userModel.getCoursetype());
-            System.out.println("  Course Name: " + userModel.getCourseName());
-            System.out.println("  Subjects: " + userModel.getSubjects());
-            System.out.println("  Standards: " + userModel.getStandards());
-            System.out.println("  Phone: " + userModel.getPhoneNumber());
-            System.out.println("  Password stored (encrypted): " + userModel.getPassword());
-            
-            MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbName);
-            mongoTemplate.save(userModel, collectionName);
-            System.out.println("Data saved successfully to database");
-            return true;
-        } else {
-            System.out.println("User with email " + user.getUser().getGmail() + " already exists");
-            return false;
+
+    private MongoTemplate template() {
+        return new MongoTemplate(mongoClient, dbName);
+    }
+
+    private String hashIfNeeded(String pw) {
+        if (pw == null || pw.isEmpty()) return pw;
+        return pw.startsWith("$2") ? pw : passwordEncoder.encodePassword(pw);
+    }
+
+    /** Fill subjects / standards from the course when they were left empty. */
+    private void applyDefaults(UserModel u) {
+        String courseName = u.getCourseName();
+        if (courseName == null || courseName.isEmpty()) return;
+        String role = u.getRole();
+        if (u.getSubjects() == null || u.getSubjects().isEmpty()) {
+            u.setSubjects(getDefaultSubjects(courseName, role));
+        }
+        if (u.getStandards() == null || u.getStandards().isEmpty()) {
+            u.setStandards(getDefaultStandards(courseName, role));
         }
     }
-    
-    private boolean checkGmail(String gmail) {
-        MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbName);
-        Query query = new Query(Criteria.where("gmail").is(gmail));
-        return mongoTemplate.exists(query, UserModel.class, collectionName);
+
+    /** CREATE */
+    public boolean saveNewUser(UserDTO dto) {
+        UserModel user = dto.getUser();
+        if (user == null || user.getGmail() == null || user.getGmail().trim().isEmpty()) return false;
+        if (checkGmail(user.getGmail())) {
+            System.out.println("User with email " + user.getGmail() + " already exists");
+            return false;
+        }
+
+        user.setPassword(hashIfNeeded(user.getPassword()));
+        if (user.getRole() == null || user.getRole().isEmpty()) user.setRole("teacher");
+        applyDefaults(user);
+
+        System.out.println("Saving user: " + user);
+        template().save(user, collectionName);
+        return true;
     }
-    
+
+    /**
+     * UPDATE in place (keeps the same _id; blank password = keep old password).
+     * @return "ok" | "notfound" | "duplicate" | "invalid"
+     */
+    public String updateUser(String oldGmail, UserModel in) {
+        if (in == null || in.getGmail() == null || in.getGmail().trim().isEmpty()) return "invalid";
+
+        MongoTemplate mt = template();
+        Query q = new Query(Criteria.where("gmail").is(oldGmail));
+        UserModel existing = mt.findOne(q, UserModel.class, collectionName);
+        if (existing == null) return "notfound";
+
+        if (!oldGmail.equals(in.getGmail()) && checkGmail(in.getGmail())) return "duplicate";
+
+        String newPassword = (in.getPassword() == null || in.getPassword().isEmpty())
+                ? existing.getPassword()
+                : hashIfNeeded(in.getPassword());
+        in.setPassword(newPassword);
+        applyDefaults(in);
+
+        Update up = new Update()
+                .set("userName", in.getUserName())
+                .set("gmail", in.getGmail())
+                .set("phoneNumber", in.getPhoneNumber())
+                .set("password", in.getPassword())
+                .set("role", in.getRole())
+                .set("service", in.getService())
+                .set("coursetype", in.getCoursetype())
+                .set("courseName", in.getCourseName())
+                .set("boardType", in.getBoardType())
+                .set("standards", in.getStandards())
+                .set("subjects", in.getSubjects());
+
+        mt.updateFirst(q, up, UserModel.class, collectionName);
+        return "ok";
+    }
+
+    private boolean checkGmail(String gmail) {
+        Query query = new Query(Criteria.where("gmail").is(gmail));
+        return template().exists(query, UserModel.class, collectionName);
+    }
+
     public List<UserModel> getUsers() {
-        MongoTemplate mt = new MongoTemplate(mongoClient, dbName);
-        return mt.findAll(UserModel.class, collectionName);
+        return template().findAll(UserModel.class, collectionName);
     }
 
     public void deleteUser(String gmail) {
-        MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbName);
-        System.out.println("Deleting user: " + gmail);
         Query query = new Query(Criteria.where("gmail").is(gmail));
-        mongoTemplate.remove(query, UserModel.class, collectionName);
+        template().remove(query, UserModel.class, collectionName);
         System.out.println("Deleted " + gmail);
     }
-    
-    // Updated method to get default subjects based on course AND role
+
+    // ───────────── default subjects / standards ─────────────
     private List<String> getDefaultSubjects(String courseName, String role) {
         if (courseName == null) return new ArrayList<>();
-        
-        String courseLower = courseName.toLowerCase();
-        
-        // Teacher-specific subjects
+        String c = courseName.toLowerCase();
+
         if ("teacher".equalsIgnoreCase(role)) {
-            switch (courseLower) {
-                case "neet":
-                    return Arrays.asList("Physics", "Chemistry", "Botany", "Zoology");
-                case "jee":
-                    return Arrays.asList("Physics", "Chemistry", "Maths");
+            switch (c) {
+                case "neet":    return Arrays.asList("Physics", "Chemistry", "Botany", "Zoology");
+                case "jee":     return Arrays.asList("Physics", "Chemistry", "Maths");
                 case "class11":
-                    return Arrays.asList("Physics", "Chemistry", "Biology", "Mathematics");
-                case "class12":
-                    return Arrays.asList("Physics", "Chemistry", "Biology", "Mathematics");
-                default:
-                    return new ArrayList<>();
+                case "class12": return Arrays.asList("Physics", "Chemistry", "Biology", "Mathematics");
+                default:        return new ArrayList<>();
             }
-        } 
-        // Student-specific subjects
-        else {
-            switch (courseLower) {
-                case "neet":
-                    return Arrays.asList("Physics", "Chemistry", "Zoology", "Botany");
-                case "jee":
-                    return Arrays.asList("Physics", "Chemistry", "Maths");
-                case "class1-5":
-                    return Arrays.asList("English", "Maths", "Science");
-                case "class6-12":
-                    return Arrays.asList("Physics", "Chemistry", "Maths", "Biology");
-                case "kindergarten":
-                    return Arrays.asList("ABCs", "Numbers", "Shapes");
-                default:
-                    return new ArrayList<>();
+        } else {
+            switch (c) {
+                case "neet":         return Arrays.asList("Physics", "Chemistry", "Zoology", "Botany");
+                case "jee":          return Arrays.asList("Physics", "Chemistry", "Maths");
+                case "class1-5":     return Arrays.asList("English", "Maths", "Science");
+                case "class6-12":    return Arrays.asList("Physics", "Chemistry", "Maths", "Biology");
+                case "kindergarten": return Arrays.asList("ABCs", "Numbers", "Shapes");
+                default:             return new ArrayList<>();
             }
         }
     }
-    
-    // Updated method to get default standards based on course AND role
+
     private List<String> getDefaultStandards(String courseName, String role) {
         if (courseName == null) return new ArrayList<>();
-        
-        String courseLower = courseName.toLowerCase();
-        
-        // Teacher-specific standards
+        String c = courseName.toLowerCase();
+
         if ("teacher".equalsIgnoreCase(role)) {
-            switch (courseLower) {
+            switch (c) {
                 case "neet":
-                case "jee":
-                    return Arrays.asList("11", "12");
-                case "class11":
-                    return Arrays.asList("11");
-                case "class12":
-                    return Arrays.asList("12");
-                default:
-                    return new ArrayList<>();
+                case "jee":     return Arrays.asList("11", "12");
+                case "class11": return Arrays.asList("11");
+                case "class12": return Arrays.asList("12");
+                default:        return new ArrayList<>();
             }
-        } 
-        // Student-specific standards
-        else {
-            switch (courseLower) {
+        } else {
+            switch (c) {
                 case "neet":
-                case "jee":
-                    return Arrays.asList("11", "12");
-                case "class1-5":
-                    return Arrays.asList("1", "2", "3", "4", "5");
-                case "class6-12":
-                    return Arrays.asList("6", "7", "8", "9", "10", "11", "12");
-                case "kindergarten":
-                    return Arrays.asList("KG");
-                default:
-                    return new ArrayList<>();
+                case "jee":          return Arrays.asList("11", "12");
+                case "class1-5":     return Arrays.asList("1", "2", "3", "4", "5");
+                case "class6-12":    return Arrays.asList("6", "7", "8", "9", "10", "11", "12");
+                case "kindergarten": return Arrays.asList("KG");
+                default:             return new ArrayList<>();
             }
         }
     }
-    
-    // Public method to get default subjects (updated with role parameter)
+
     public List<String> getDefaultSubjectsPublic(String courseName, String role) {
         return getDefaultSubjects(courseName, role);
     }
-    
-    // Public method to get default standards (updated with role parameter)
+
     public List<String> getDefaultStandardsPublic(String courseName, String role) {
         return getDefaultStandards(courseName, role);
     }
-    
-    // Updated migration method
+
+    // ───────────── one-time migration ─────────────
     public void migrateExistingUsers() {
         try {
-            MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, dbName);
-            List<UserModel> allUsers = mongoTemplate.findAll(UserModel.class, collectionName);
-            
-            int updatedCount = 0;
-            int passwordMigratedCount = 0;
-            
-            for (UserModel user : allUsers) {
-                boolean needsUpdate = false;
+            MongoTemplate mt = template();
+            List<UserModel> all = mt.findAll(UserModel.class, collectionName);
+            int updated = 0, pwMigrated = 0;
+
+            for (UserModel user : all) {
+                boolean changed = false;
                 String courseName = user.getCourseName();
                 String role = user.getRole() != null ? user.getRole() : "student";
-                
-                // Migrate plain text passwords to hashed
-                String password = user.getPassword();
-                if (password != null && !password.isEmpty() && !password.startsWith("$2")) {
-                    String hashedPassword = passwordEncoder.encodePassword(password);
-                    user.setPassword(hashedPassword);
-                    needsUpdate = true;
-                    passwordMigratedCount++;
-                    System.out.println("Migrated password for: " + user.getGmail());
+
+                String pw = user.getPassword();
+                if (pw != null && !pw.isEmpty() && !pw.startsWith("$2")) {
+                    user.setPassword(passwordEncoder.encodePassword(pw));
+                    changed = true;
+                    pwMigrated++;
                 }
-                
-                // Update subjects if empty
                 if (courseName != null && (user.getSubjects() == null || user.getSubjects().isEmpty())) {
-                    List<String> defaultSubjects = getDefaultSubjects(courseName, role);
-                    user.setSubjects(defaultSubjects);
-                    needsUpdate = true;
-                    System.out.println("Setting default subjects for " + user.getGmail());
+                    user.setSubjects(getDefaultSubjects(courseName, role));
+                    changed = true;
                 }
-                
-                // Update standards if empty
                 if (courseName != null && (user.getStandards() == null || user.getStandards().isEmpty())) {
-                    List<String> defaultStandards = getDefaultStandards(courseName, role);
-                    user.setStandards(defaultStandards);
-                    needsUpdate = true;
-                    System.out.println("Setting default standards for " + user.getGmail());
+                    user.setStandards(getDefaultStandards(courseName, role));
+                    changed = true;
                 }
-                
-                // Update role for existing users if not set
                 if (user.getRole() == null || user.getRole().isEmpty()) {
                     user.setRole("student");
-                    needsUpdate = true;
-                    System.out.println("Setting default role for " + user.getGmail());
+                    changed = true;
                 }
-                
-                if (needsUpdate) {
-                    mongoTemplate.save(user, collectionName);
-                    updatedCount++;
+                if (changed) {
+                    mt.save(user, collectionName);
+                    updated++;
                 }
             }
-            
-            System.out.println("Migration completed. Updated " + updatedCount + " users.");
-            System.out.println("Password migration completed. Hashed " + passwordMigratedCount + " passwords.");
+            System.out.println("Migration done. Updated " + updated + " users, hashed " + pwMigrated + " passwords.");
         } catch (Exception e) {
             System.err.println("Error during migration: " + e.getMessage());
             e.printStackTrace();
