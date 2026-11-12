@@ -1,6 +1,7 @@
 package com.padmasiniAdmin.padmasiniAdmin_1.manageUser;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,14 +15,19 @@ public class UserModel implements Serializable {
     private String userName;
     private String gmail;
     private String password;
+    private String passwordEnc;     // reversible (AES) copy of the password - admin view only
     private String role;            // "teacher" | "admin" | "student"
-    private String service;         // NEW: for role "admin" -> the ONE section allocated (e.g. "support")
-    private String boardType;       // NEW: cbse / state_board (tutor teachers)
+    private String service;         // for role "admin": comma-separated sections, e.g. "students,blogs" or "full"
+    private String boardType;       // cbse / state_board (tutor teachers)
     private String coursetype;
     private String courseName;
     private List<String> standards = new ArrayList<String>();
     private List<String> subjects = new ArrayList<String>();
     private String phoneNumber;
+
+    // Filled at login only (NOT saved to MongoDB): e.g. ["teacher","admin"]
+    @Transient
+    private List<String> roles = new ArrayList<String>();
 
     private String firstname;
     private String lastname;
@@ -53,8 +59,14 @@ public class UserModel implements Serializable {
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
 
+    public String getPasswordEnc() { return passwordEnc; }
+    public void setPasswordEnc(String passwordEnc) { this.passwordEnc = passwordEnc; }
+
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public List<String> getRoles() { return roles; }
+    public void setRoles(List<String> roles) { this.roles = roles; }
 
     public String getService() { return service; }
     public void setService(String service) { this.service = service; }
@@ -130,11 +142,11 @@ public class UserModel implements Serializable {
 
     public static long getSerialversionuid() { return serialVersionUID; }
 
-    // NOTE: password intentionally NOT included
+    // NOTE: password and passwordEnc intentionally NOT included
     @Override
     public String toString() {
-        return "UserModel [userName=" + userName + ", gmail=" + gmail + ", role=" + role + ", service=" + service
-                + ", coursetype=" + coursetype + ", courseName=" + courseName + ", standards=" + standards
-                + ", subjects=" + subjects + "]";
+        return "UserModel [userName=" + userName + ", gmail=" + gmail + ", role=" + role + ", roles=" + roles
+                + ", service=" + service + ", coursetype=" + coursetype + ", courseName=" + courseName
+                + ", standards=" + standards + ", subjects=" + subjects + "]";
     }
 }

@@ -29,6 +29,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.result.DeleteResult;
 
+import jakarta.servlet.http.HttpSession;
+
 @RestController
 @RequestMapping("/api")
 @SuppressWarnings("unchecked")
@@ -60,8 +62,9 @@ public class UserController {
             res.put("status", "pass");
             res.put("message", "User created successfully");
         } else {
+            String role = user.getUser().getRole() == null ? "user" : user.getUser().getRole();
             res.put("status", "failed");
-            res.put("message", "User with this email already exists");
+            res.put("message", "A " + role + " with this email already exists");
         }
         return ResponseEntity.ok(res);
     }
@@ -82,7 +85,7 @@ public class UserController {
     @GetMapping("/getUsers")
     public List<UserModel> getUsers() {
         List<UserModel> users = userService.getUsers();
-        users.forEach(u -> u.setPassword(null));
+        users.forEach(u -> { u.setPassword(null); u.setPasswordEnc(null); });
         System.out.println("Retrieved " + users.size() + " users from database");
         return users;
     }
@@ -119,13 +122,64 @@ public class UserController {
         return ResponseEntity.ok(res);
     }
 
+    // role is sent so deleting the teacher does not delete the admin with the same email (and vice versa)
     @DeleteMapping("/deleteUser/{gmail:.+}")
-    public ResponseEntity<?> deleteUser(@PathVariable("gmail") String gmail) {
+    public ResponseEntity<?> deleteUser(@PathVariable("gmail") String gmail,
+                                        @RequestParam(required = false) String role) {
         Map<String, String> res = new HashMap<>();
-        userService.deleteUser(gmail);
+        userService.deleteUser(gmail, role);
         res.put("status", "pass");
         res.put("message", "User deleted successfully");
         return ResponseEntity.ok(res);
+    }
+
+    // ---------------------------------------------------------------------
+    //  PASSWORD VIEW - ONLY for a logged-in FULL-ACCESS ADMIN
+    //  (teachers and limited admins get 403)
+    // ---------------------------------------------------------------------
+    @GetMapping("/getUserPassword/{gmail:.+}")
+    public ResponseEntity<?> getUserPassword(@PathVariable("gmail") String gmail,
+                                             @RequestParam String role,
+                                             HttpSession session) {
+        Map<String, Object> res = new HashMap<>();
+
+        if (!isFullAdmin(session)) {
+            res.put("status", "forbidden");
+            res.put("message", "Only a full-access admin can view passwords");
+            return ResponseEntity.status(403).body(res);
+        }
+
+        String pw = userService.getPlainPassword(gmail, role);
+        res.put("status", "pass");
+        res.put("password", pw);   // null for old accounts that have no stored copy yet
+        return ResponseEntity.ok(res);
+    }
+
+    /**
+     * true only when the session belongs to an admin whose service is empty (main admin) or contains "full".
+     * Sessions created before this change have no "service" attribute -> denied until the user logs in again.
+     */
+    private boolean isFullAdmin(HttpSession session) {
+        if (session == null || session.getAttribute("user") == null) return false;
+
+        Object role = session.getAttribute("role");
+        if (role == null || !"admin".equalsIgnoreCase(role.toString())) return false;
+
+        Object svc = session.getAttribute("service");
+        if (svc == null) return false;
+
+        String s = svc.toString().trim();
+        if (s.isEmpty()) return true;
+        for (String part : s.split(",")) {
+            if ("full".equalsIgnoreCase(part.trim())) return true;
+        }
+        return false;
+    }
+
+    // Returns only roles + access info (no passwords). Used by the frontend after login.
+    @GetMapping("/getLinkedAccounts")
+    public ResponseEntity<?> getLinkedAccounts(@RequestParam String gmail, @RequestParam String role) {
+        return ResponseEntity.ok(userService.getLinkedProfile(gmail, role));
     }
 
     @GetMapping("/getUsersByRole/{role}")
@@ -134,7 +188,7 @@ public class UserController {
             MongoTemplate mongoTemplate = new MongoTemplate(mongoClient, "users");
             Query query = new Query(Criteria.where("role").is(role));
             List<UserModel> users = mongoTemplate.find(query, UserModel.class, "users");
-            users.forEach(u -> u.setPassword(null));
+            users.forEach(u -> { u.setPassword(null); u.setPasswordEnc(null); });
             return ResponseEntity.ok(users);
         } catch (Exception e) {
             return errorResponse(e);

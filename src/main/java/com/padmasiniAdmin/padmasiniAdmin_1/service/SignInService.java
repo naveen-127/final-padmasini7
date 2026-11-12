@@ -1,126 +1,183 @@
 package com.padmasiniAdmin.padmasiniAdmin_1.service;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import com.mongodb.client.MongoClient;
 import com.padmasiniAdmin.padmasiniAdmin_1.manageUser.UserModel;
+import com.padmasiniAdmin.padmasiniAdmin_1.utils.PasswordCrypto;
 import com.padmasiniAdmin.padmasiniAdmin_1.utils.PasswordEncoder;
 
 @Service
 public class SignInService {
-    
+
+    private static final String DB = "users";
+    private static final String COLLECTION = "users";
+
     @Autowired
     private MongoClient mongoClient;
-    
+
     @Autowired
     private PasswordEncoder passwordEncoder;
-    
+
+    @Autowired
+    private PasswordCrypto passwordCrypto;
+
+    private MongoTemplate template() {
+        return new MongoTemplate(mongoClient, DB);
+    }
+
     // Find user by username (without password check)
     public UserModel findUserByUserName(String userName) {
-        MongoTemplate mongo = new MongoTemplate(mongoClient, "users");
         Query query = new Query(Criteria.where("userName").is(userName));
-        return mongo.findOne(query, UserModel.class, "users");
+        return template().findOne(query, UserModel.class, COLLECTION);
     }
-    
+
     // Find user by email (without password check)
     public UserModel findUserByEmail(String email) {
-        MongoTemplate mongo = new MongoTemplate(mongoClient, "users");
         Query query = new Query(Criteria.where("gmail").is(email));
-        return mongo.findOne(query, UserModel.class, "users");
+        return template().findOne(query, UserModel.class, COLLECTION);
     }
-    
-    // Updated method that supports both plain text and hashed passwords
+
+    // ─────────────────────────────────────────────────────────────
+    //  LOGIN
+    //  Looks at EVERY account whose username OR email equals `identifier`
+    //  and keeps only the ones whose password matches the typed password.
+    //   - only the teacher matches -> teacher login
+    //   - only the admin matches   -> admin login
+    //   - both match               -> ONE merged login (role "admin", roles = [admin, teacher],
+    //                                 teacher course data kept) = access of both
+    //  So the same username with different passwords logs into the right account.
+    //  Returns null when nothing matches.
+    // ─────────────────────────────────────────────────────────────
+    public UserModel authenticate(String identifier, String password) {
+        if (identifier == null || password == null) return null;
+        String id = identifier.trim();
+        if (id.isEmpty() || password.isEmpty()) return null;
+
+        Query q = new Query(new Criteria().orOperator(
+                Criteria.where("userName").is(id),
+                Criteria.where("gmail").is(id)));
+        List<UserModel> candidates = template().find(q, UserModel.class, COLLECTION);
+
+        UserModel admin = null;
+        UserModel teacher = null;
+        UserModel other = null;
+
+        for (UserModel u : candidates) {
+            if (!verifyAndUpgrade(u, password)) continue;
+
+            String r = u.getRole() == null ? "" : u.getRole();
+            if (r.equalsIgnoreCase("admin")) {
+                if (admin == null) admin = u;
+            } else if (r.equalsIgnoreCase("teacher")) {
+                if (teacher == null) teacher = u;
+            } else if (other == null) {
+                other = u;
+            }
+        }
+
+        if (admin == null && teacher == null) {
+            if (other == null) {
+                System.out.println("❌ Login failed for: " + id);
+                return null;
+            }
+            other.setRoles(new ArrayList<>(Arrays.asList(
+                    other.getRole() == null ? "student" : other.getRole())));
+            return other;
+        }
+
+        Set<String> roles = new LinkedHashSet<>();
+        UserModel base;
+        if (admin != null) {
+            base = admin;
+            roles.add("admin");
+            if (teacher != null) {
+                roles.add("teacher");
+                base.setCoursetype(teacher.getCoursetype());
+                base.setCourseName(teacher.getCourseName());
+                base.setBoardType(teacher.getBoardType());
+                base.setStandards(teacher.getStandards());
+                base.setSubjects(teacher.getSubjects());
+            }
+        } else {
+            base = teacher;
+            roles.add("teacher");
+        }
+        base.setRoles(new ArrayList<>(roles)); // merged copy for the response/session only - never saved
+        System.out.println("✅ Login OK for " + id + " roles=" + roles);
+        return base;
+    }
+
+    // Kept so any other code that calls the old methods still works
     public UserModel checkUserName(String userName, String password) {
-        UserModel user = findUserByUserName(userName);
-        if (user != null) {
-            String dbPassword = user.getPassword();
-            System.out.println("=== LOGIN ATTEMPT ===");
-            System.out.println("User: " + userName);
-            System.out.println("DB Password starts with $2? " + (dbPassword != null && dbPassword.startsWith("$2")));
-            
-            // Check if password is BCrypt hash or plain text
-            if (dbPassword != null && dbPassword.startsWith("$2")) {
-                // BCrypt hash - use matches
-                if (passwordEncoder.matches(password, dbPassword)) {
-                    System.out.println("✅ Password matched (BCrypt)");
-                    return user;
-                } else {
-                    System.out.println("❌ Password mismatch (BCrypt)");
-                }
-            } else {
-                // Plain text - direct compare (for existing users)
-                System.out.println("Plain text password detected in DB");
-                if (password.equals(dbPassword)) {
-                    System.out.println("✅ Password matched (plain text) - Migrating to hash...");
-                    // Migrate to hash on successful login
-                    String hashedPassword = passwordEncoder.encodePassword(password);
-                    user.setPassword(hashedPassword);
-                    MongoTemplate mongo = new MongoTemplate(mongoClient, "users");
-                    mongo.save(user, "users");
-                    System.out.println("✅ Password migrated to BCrypt hash for: " + userName);
-                    return user;
-                } else {
-                    System.out.println("❌ Password mismatch (plain text)");
-                }
-            }
-        }
-        System.out.println("No user found for username: " + userName);
-        return null;
+        return authenticate(userName, password);
     }
-    
-    // Updated method that supports both plain text and hashed passwords
+
     public UserModel checkUserGmail(String gmail, String password) {
-        UserModel user = findUserByEmail(gmail);
-        if (user != null) {
-            String dbPassword = user.getPassword();
-            System.out.println("=== LOGIN ATTEMPT (Email) ===");
-            System.out.println("Email: " + gmail);
-            System.out.println("DB Password starts with $2? " + (dbPassword != null && dbPassword.startsWith("$2")));
-            
-            // Check if password is BCrypt hash or plain text
-            if (dbPassword != null && dbPassword.startsWith("$2")) {
-                // BCrypt hash - use matches
-                if (passwordEncoder.matches(password, dbPassword)) {
-                    System.out.println("✅ Password matched (BCrypt)");
-                    return user;
-                } else {
-                    System.out.println("❌ Password mismatch (BCrypt)");
-                }
-            } else {
-                // Plain text - direct compare (for existing users)
-                System.out.println("Plain text password detected in DB");
-                if (password.equals(dbPassword)) {
-                    System.out.println("✅ Password matched (plain text) - Migrating to hash...");
-                    // Migrate to hash on successful login
-                    String hashedPassword = passwordEncoder.encodePassword(password);
-                    user.setPassword(hashedPassword);
-                    MongoTemplate mongo = new MongoTemplate(mongoClient, "users");
-                    mongo.save(user, "users");
-                    System.out.println("✅ Password migrated to BCrypt hash for: " + gmail);
-                    return user;
-                } else {
-                    System.out.println("❌ Password mismatch (plain text)");
-                }
+        return authenticate(gmail, password);
+    }
+
+    /**
+     * Checks the typed password against ONE account (BCrypt hash or old plain text).
+     * On success it also:
+     *   - hashes an old plain-text password,
+     *   - stores the reversible copy (passwordEnc) when missing, so a full admin can view it later.
+     */
+    private boolean verifyAndUpgrade(UserModel u, String raw) {
+        String stored = u.getPassword();
+        if (stored == null || stored.isEmpty()) return false;
+
+        boolean matched;
+        boolean plain = !stored.startsWith("$2");
+        if (plain) {
+            matched = stored.equals(raw);
+        } else {
+            try {
+                matched = passwordEncoder.matches(raw, stored);
+            } catch (Exception e) {
+                matched = false;
             }
         }
-        System.out.println("No user found for email: " + gmail);
-        return null;
-    }
-    
-    // Private helper methods (keeping your original structure)
-    private UserModel checkDbForUserGmail(String gmail) {
-        MongoTemplate mongo = new MongoTemplate(mongoClient, "users");
-        Query query = new Query(Criteria.where("gmail").is(gmail));
-        return mongo.findOne(query, UserModel.class, "users");
-    }
-    
-    private UserModel checkDbForUser(String userName) {
-        MongoTemplate mongo = new MongoTemplate(mongoClient, "users");
-        Query query = new Query(Criteria.where("userName").is(userName));
-        return mongo.findOne(query, UserModel.class, "users");
+        if (!matched) return false;
+
+        try {
+            boolean needEnc = u.getPasswordEnc() == null || u.getPasswordEnc().isEmpty();
+            if ((plain || needEnc) && u.getId() != null) {
+                Update up = new Update();
+                if (needEnc) {
+                    String enc = passwordCrypto.encrypt(raw);
+                    if (enc != null) {
+                        up.set("passwordEnc", enc);
+                        u.setPasswordEnc(enc);
+                    }
+                }
+                if (plain) {
+                    String hashed = passwordEncoder.encodePassword(raw);
+                    up.set("password", hashed);
+                    u.setPassword(hashed);
+                    System.out.println("✅ Password migrated to BCrypt for: " + u.getUserName());
+                }
+                if (!up.getUpdateObject().isEmpty()) {
+                    template().updateFirst(
+                            new Query(Criteria.where("_id").is(u.getId())),
+                            up, UserModel.class, COLLECTION);
+                }
+            }
+        } catch (Exception e) {
+            // login must still work even if this housekeeping fails
+            System.err.println("Could not upgrade password data: " + e.getMessage());
+        }
+        return true;
     }
 }
